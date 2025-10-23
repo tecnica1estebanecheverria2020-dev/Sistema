@@ -14,42 +14,14 @@ class AuthService {
         return await bcrypt.compare(password, hashedPassword);
     };
 
-    registerUser = async (userData) => {
-        try {
-            const { name, email, password } = userData;
-            const normalizedEmail = email.toLowerCase().trim();
-
-            const hashedPassword = await this.hashPassword(password);
-
-            const [result] = await this.conex.query(
-                'INSERT INTO login (name, email, pass) VALUES (?, ?, ?)',
-                [name, normalizedEmail, hashedPassword]
-            );
-
-            return {
-                id_login: result.insertId,
-                name: name,
-                email: normalizedEmail,
-                active: true,
-                is_admin: false,
-            }
-
-        } catch (error) {
-            if (error.status) throw error;
-            if (error.code === 'ER_DUP_ENTRY') {
-                throw { status: 409, message: 'El correo electrónico ya está registrado' };
-            }
-            throw { status: 500, message: 'Error interno del servidor', cause: error };
-        }
-    };
-
     loginUser = async (credentials) => {
         try {
             const { email, password } = credentials;
             const normalizedEmail = email.toLowerCase().trim();
 
             const [login] = await this.conex.query(
-                'SELECT * FROM login WHERE email = ? AND active = 1',
+                'SELECT u.*, r.id_rol, r.name AS rol_name FROM users u ' +
+                'JOIN roles r ON u.id_rol = r.id_rol WHERE u.email = ? AND u.active = 1',
                 [normalizedEmail]
             );
 
@@ -76,8 +48,8 @@ class AuthService {
                 }
 
                 await this.conex.query(
-                    'UPDATE login SET failed_attempts = ?, lock_until = ? WHERE id_login = ?',
-                    [newFailedAttempts, lockedUntil, user.id_login]
+                    'UPDATE users SET failed_attempts = ?, lock_until = ? WHERE id_user = ?',
+                    [newFailedAttempts, lockedUntil, user.id_user]
                 );
 
                 throw { status: 401, message: 'Credenciales incorrectas' };
@@ -85,16 +57,28 @@ class AuthService {
 
             // Resetear intentos fallidos en login exitoso
             await this.conex.query(
-                'UPDATE login SET failed_attempts = 0, lock_until = NULL WHERE id_login = ?',
-                [user.id_login]
+                'UPDATE users SET failed_attempts = 0, lock_until = NULL WHERE id_user = ?',
+                [user.id_user]
             );
 
+ /*
+                user:
+                id_user
+                id_rol
+                email
+                name
+                password
+                lock_until
+                failed_attempts
+                active
+                */
+
             return {
-                id_login: user.id_login,
-                name: user.name,
+                id_user: user.id_user,
+                id_rol: user.id_rol,
+                rol_name: user.rol_name,
                 email: user.email,
-                active: user.active,
-                is_admin: user.is_admin,
+                name: user.name,
             }
         } catch (error) {
             if (error.status) throw error;
