@@ -1,11 +1,11 @@
 import express from 'express';
 import inventarioController from '../controllers/InventarioController.js';
-import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { requireAuth } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Todas las rutas están protegidas con autenticación
-router.use(authMiddleware);
+router.use(requireAuth);
 
 // Obtener todos los items
 router.get('/', inventarioController.getAll);

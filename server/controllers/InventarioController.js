@@ -1,5 +1,5 @@
 import inventarioService from '../services/InventarioService.js';
-import { handleError } from '../utils/handleError.js';
+import handleError from '../utils/handleError.js';
 
 class InventarioController {
   async getAll(req, res) {

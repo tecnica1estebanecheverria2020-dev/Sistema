@@ -1,4 +1,4 @@
-import { pool } from '../db/conex.js';
+import pool from '../db/conex.js';
 
 class InventarioService {
   async getAll() {

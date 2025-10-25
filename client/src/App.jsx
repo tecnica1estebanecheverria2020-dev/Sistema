@@ -9,7 +9,7 @@ import Layout from './Layout.jsx';
 import Inventario from './pages/Inventario/Inventario.jsx';
 
 // Provedor del usuario
-import { UserProvider } from './contexts/UserContext.jsx';
+import { UserProvider } from './shared/contexts/UserContext.jsx';
 
 export default function App() {
   return (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import Table from '../../shared/components/Table';
-import Modal from '../../shared/components/Modal';
+import Table from '../../shared/components/Table/Table';
+import Modal from '../../shared/components/Modal/Modal';
 import { useInventario } from '../../shared/hooks/useInventario';
 
 const Inventario = () => {

@@ -1,5 +1,5 @@
 // Componentes
-import Nav from './components/Nav/Nav.jsx';
+import Nav from './shared/components/Nav/Nav.jsx';
 // import Footer from './components/Footer/Footer.jsx';
 // Dependencias
 import { Outlet, useLocation } from "react-router-dom";

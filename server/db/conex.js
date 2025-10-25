@@ -18,7 +18,8 @@ pool.getConnection()
     connection.release();
   })
   .catch((error) => {
-    log.error('Error al establecer la conexión a la base de datos:', error);
+    log.error('Error al establecer la conexión a la base de datos:');
+    log.error(error);
   });
 
 export default pool;

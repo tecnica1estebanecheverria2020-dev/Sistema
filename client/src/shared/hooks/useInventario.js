@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { inventarioService } from '../../api/inventarioService';
+import { inventarioService } from '../services/inventarioService';
 
 export const useInventario = () => {
   const [items, setItems] = useState([]);
