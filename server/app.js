@@ -10,6 +10,7 @@ import loadStaticFiles from './utils/loadStaticsFiles.js'
 
 // Importaciones de rutas
 import authRoutes from './routes/auth.js';
+import inventarioRoutes from './routes/inventario.js';
 import log from './utils/log.js';
 // Middlewares
 const app = express();
@@ -38,6 +39,7 @@ if (!isProduction) {
 
 // Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/inventario', inventarioRoutes);
 
 // Testeo de api
 app.get('/api/test', async (req, res) => {
