@@ -6,6 +6,14 @@ import { useInventario } from '../../shared/hooks/useInventario';
 const Inventario = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
+  const [formData, setFormData] = useState({
+    code: '',
+    category: '',
+    amount: 0,
+    available: 0,
+    state: 'activo',
+    location: '',
+  });
   const { items, loading, error, fetchItems, createItem, updateItem, deleteItem } = useInventario();
 
   useEffect(() => {
@@ -13,55 +21,65 @@ const Inventario = () => {
   }, [fetchItems]);
 
   const columns = [
-    { key: 'nombre', label: 'Nombre' },
-    { key: 'categoria', label: 'Categoría' },
-    { key: 'cantidad', label: 'Cantidad' },
-    { key: 'disponible', label: 'Disponible' },
+    { key: 'code', label: 'Código' },
+    { key: 'name', label: 'Nombre' },
+    { key: 'category', label: 'Categoría' },
+    { key: 'amount', label: 'Cantidad' },
+    { key: 'available', label: 'Disponible' },
     { 
-      key: 'estado', 
+      key: 'state', 
       label: 'Estado',
       render: (value) => (
         <span className={`px-2 py-1 rounded-full text-xs ${
-          value === 'Disponible' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          value === 'activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
         }`}>
           {value}
         </span>
       )
     },
-    { key: 'ubicacion', label: 'Ubicación' },
+    { key: 'location', label: 'Ubicación' },
   ];
 
   const handleEdit = (item) => {
     setCurrentItem(item);
+    setFormData({
+      code: item.code || '',
+      category: item.category || '',
+      amount: Number(item.amount ?? 0),
+      available: Number(item.available ?? 0),
+      state: item.state || 'activo',
+      location: item.location || '',
+    });
     setIsModalOpen(true);
   };
 
   const handleDelete = async (item) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este item?')) {
-      await deleteItem(item.id);
+      await deleteItem(item.id_inventory);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const itemData = {
-      nombre: formData.get('nombre'),
-      categoria: formData.get('categoria'),
-      cantidad: parseInt(formData.get('cantidad')),
-      disponible: parseInt(formData.get('disponible')),
-      estado: formData.get('estado'),
-      ubicacion: formData.get('ubicacion'),
+
+    const payload = {
+      code: formData.code,
+      category: formData.category,
+      amount: Number(formData.amount),
+      available: Number(formData.available),
+      state: formData.state,
+      location: formData.location,
     };
 
-    if (currentItem) {
-      await updateItem(currentItem.id, itemData);
+    if (currentItem?.id_inventory) {
+      await updateItem(currentItem.id_inventory, payload);
     } else {
-      await createItem(itemData);
+      await createItem(payload);
     }
 
     setIsModalOpen(false);
     setCurrentItem(null);
+    setFormData({ code: '', category: '', amount: 0, available: 0, state: 'activo', location: '' });
   };
 
   const renderActions = (item) => (
@@ -122,16 +140,18 @@ const Inventario = () => {
         onClose={() => {
           setIsModalOpen(false);
           setCurrentItem(null);
+          setFormData({ code: '', category: '', amount: 0, available: 0, state: 'activo', location: '' });
         }}
         title={currentItem ? 'Editar Item' : 'Agregar Item'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nombre</label>
+            <label className="block text-sm font-medium text-gray-700">Código</label>
             <input
               type="text"
-              name="nombre"
-              defaultValue={currentItem?.nombre}
+              name="code"
+              value={formData.code}
+              onChange={(e) => setFormData((prev) => ({ ...prev, code: e.target.value }))}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-maroon-500 focus:ring-maroon-500"
               required
             />
@@ -140,8 +160,9 @@ const Inventario = () => {
             <label className="block text-sm font-medium text-gray-700">Categoría</label>
             <input
               type="text"
-              name="categoria"
-              defaultValue={currentItem?.categoria}
+              name="category"
+              value={formData.category}
+              onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-maroon-500 focus:ring-maroon-500"
               required
             />
@@ -150,8 +171,9 @@ const Inventario = () => {
             <label className="block text-sm font-medium text-gray-700">Cantidad</label>
             <input
               type="number"
-              name="cantidad"
-              defaultValue={currentItem?.cantidad}
+              name="amount"
+              value={formData.amount}
+              onChange={(e) => setFormData((prev) => ({ ...prev, amount: Number(e.target.value) }))}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-maroon-500 focus:ring-maroon-500"
               required
             />
@@ -160,8 +182,9 @@ const Inventario = () => {
             <label className="block text-sm font-medium text-gray-700">Disponible</label>
             <input
               type="number"
-              name="disponible"
-              defaultValue={currentItem?.disponible}
+              name="available"
+              value={formData.available}
+              onChange={(e) => setFormData((prev) => ({ ...prev, available: Number(e.target.value) }))}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-maroon-500 focus:ring-maroon-500"
               required
             />
@@ -169,21 +192,24 @@ const Inventario = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700">Estado</label>
             <select
-              name="estado"
-              defaultValue={currentItem?.estado}
+              name="state"
+              value={formData.state}
+              onChange={(e) => setFormData((prev) => ({ ...prev, state: e.target.value }))}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-maroon-500 focus:ring-maroon-500"
               required
             >
-              <option value="Disponible">Disponible</option>
-              <option value="No Disponible">No Disponible</option>
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+              <option value="mantenimiento">Mantenimiento</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Ubicación</label>
             <input
               type="text"
-              name="ubicacion"
-              defaultValue={currentItem?.ubicacion}
+              name="location"
+              value={formData.location}
+              onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-maroon-500 focus:ring-maroon-500"
               required
             />
@@ -194,6 +220,7 @@ const Inventario = () => {
               onClick={() => {
                 setIsModalOpen(false);
                 setCurrentItem(null);
+                setFormData({ code: '', category: '', amount: 0, available: 0, state: 'activo', location: '' });
               }}
               className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50"
             >

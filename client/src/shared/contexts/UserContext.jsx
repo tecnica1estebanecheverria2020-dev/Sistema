@@ -9,10 +9,7 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const checkSession = async () => {
-     // De momento
-      return true;
-      
+  const checkSession = async () => {      
     try {
       const response = await axios.get('/auth/me');
       
@@ -51,7 +48,7 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, handleLogin, handleLogout, loading }}>
+    <UserContext.Provider value={{ user, handleLogin, handleLogout, loading, checkSession }}>
       {children}
     </UserContext.Provider>
   );

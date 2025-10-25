@@ -14,7 +14,7 @@ export async function requireAuth(req, res, next) {
   try {
     const decoded = verifyToken(token);
 
-    const [isDesactivated] = await pool.query('SELECT active FROM login WHERE id_login = ?', [decoded.id_login]);
+    const [isDesactivated] = await pool.query('SELECT active FROM users WHERE id_user = ?', [decoded.id_user]);
     if (!isDesactivated[0].active) {
       return res.status(403).json({
         success: false,
@@ -30,15 +30,4 @@ export async function requireAuth(req, res, next) {
       message: 'Token inválido o expirado'
     });
   }
-}
-
-// Middleware para verificar que el usuario es admin
-export function requireAdmin(req, res, next) {
-  if (!req.user || !req.user.is_admin) {
-    return res.status(403).json({
-      success: false,
-      message: 'Acceso denegado: se requieren permisos de administrador'
-    });
-  }
-  next();
 }

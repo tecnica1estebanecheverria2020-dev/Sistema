@@ -8,14 +8,14 @@ import useUser from './shared/hooks/useUser.js';
 
 export default function Layout() {
   const location = useLocation();
-  const { user, loading, checkSession } = useUser();
+  const { user, loading } = useUser();
 
   useEffect(() => {
     window.scrollTo(0, 0);
 
     // Si esta cargando podriamos mostrar una pantalla de carga
     if (loading) return;
-    checkSession();
+    // checkSession();
   }, [location, loading, user]);
 
   return (

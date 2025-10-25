@@ -6,39 +6,25 @@ class AuthController {
         this.service = authService;
     }
 
-    register = async (req, res) => {
-        const { name, email, password } = req.body;
+    // No creo que sea necesario un registro, la creacion de usuarios lo controlaria el admin
+    createUser = async (req, res) => {
+        const { name, email, password, id_role } = req.body;
         try {
-            if (!name || !email || !password) {
-                throw { status: 400, message: 'Faltan datos para el registro' };
+            if (!name || !email || !password || !id_role) {
+                throw { status: 400, message: 'Faltan datos para crear el usuario' };
             }
 
-            const user = await this.service.registerUser({ name, email, password });
-
-            const token = generateToken({
-                id_login: user.id_login,
-                name: user.name,
-                email: user.email,
-                active: user.active,
-                is_admin: user.is_admin,
-            });
-
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: true, // usar HTTPS en producción
-                sameSite: 'Strict',
-                maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week8
-            });
+            const user = await this.service.createUser({ name, email, password, id_role });
 
             res.status(201).json({
                 success: true,
-                message: 'Se registró correctamente',
-                user: { ...user, pass: '[Hidden]' }
+                message: 'Usuario creado correctamente',
+                user
             });
         } catch (err) {
             return handleError(res, err);
         }
-    };
+    }
 
     login = async (req, res) => {
         const { email, password } = req.body;
@@ -47,14 +33,14 @@ class AuthController {
                 throw { status: 400, message: 'Faltan datos para el login' };
             }
 
-            const result = await this.service.loginUser({ email, password });
+            const user = await this.service.loginUser({ email, password });
 
             const token = generateToken({
-                id_login: result.id_login,
-                name: result.name,
-                email: result.email,
-                active: result.active,
-                is_admin: result.is_admin,
+                id_user: user.id_user,
+                id_role: user.id_role,
+                rol_name: user.rol_name,
+                email: user.email,
+                name: user.name,
             });
 
             res.cookie('token', token, {
@@ -67,7 +53,7 @@ class AuthController {
             res.status(200).json({
                 success: true,
                 message: 'Se inició sesión correctamente',
-                user: result 
+                user: user 
             });
         } catch (err) {
             return handleError(res, err);
@@ -76,6 +62,7 @@ class AuthController {
 
     logout = (req, res) => {
         res.clearCookie('token');
+        req.user = null;
         res.status(200).json({
             success: true,
             message: 'Se cerró sesión correctamente',

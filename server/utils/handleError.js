@@ -11,9 +11,9 @@ export default function handleError(res, err) {
 
   // Errores internos (500+) - mostrar mensaje genérico al cliente
   if (status >= 500) {
-    Log.error(`[${status}] Error interno:`, message);
-    if (err.stack) Log.debug('Stack:', err.stack);
-    if (err.cause) Log.debug('Causa:', err.cause);
+    // Log.error(`[${status}] Error interno: ${message}`);
+    // Log.error(err);
+    console.error(err);
     return res.status(500).json({
         success: false,
         message: 'Error interno del servidor'

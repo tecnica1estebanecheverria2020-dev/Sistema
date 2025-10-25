@@ -4,13 +4,13 @@ const pinoLogger = pino({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   transport: process.env.NODE_ENV !== 'production'
     ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname'
-        }
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'SYS:HH:MM:ss',
+        ignore: 'pid,hostname'
       }
+    }
     : undefined
 });
 
@@ -24,20 +24,18 @@ const logger = (req, res, next) => {
   res.on('finish', () => {
     const duration = Date.now() - start;
     const logData = {
-        url,
-        method,
-        status: res.statusCode,
-        duration: `${duration}ms`,
-        body: method === 'GET' ? undefined : body
+      body: method === 'GET' ? undefined : body
     };
+
+    const msg = `[${res.statusCode}] ${method} ${url} - ${duration}ms`;
 
     // Logs según el tipo de respuesta
     if (res.statusCode >= 500) {
-      pinoLogger.error(logData, 'Error en la solicitud');
+      pinoLogger.error(logData, msg);
     } else if (res.statusCode >= 400) {
-      pinoLogger.warn(logData, 'Solicitud con advertencia');
+      pinoLogger.warn(logData, msg);
     } else {
-      pinoLogger.info(logData, 'Solicitud procesada correctamente');
+      pinoLogger.info(logData, msg);
     }
   });
 

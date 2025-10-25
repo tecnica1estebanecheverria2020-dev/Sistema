@@ -14,14 +14,32 @@ class AuthService {
         return await bcrypt.compare(password, hashedPassword);
     };
 
+    createUser = async (userData) => {
+        const { name, email, password, id_role } = userData;
+        const hashedPassword = await this.hashPassword(password);
+        const normalizedEmail = email.toLowerCase().trim();
+
+        const [login] = await this.conex.query(
+            'INSERT INTO users (name, email, password, id_role) VALUES (?, ?, ?, ?)',
+            [name, normalizedEmail, hashedPassword, id_role]
+        );
+
+        return {
+            id_user: login.insertId,
+            name,
+            email: normalizedEmail,
+            id_role
+        };
+    }
+
     loginUser = async (credentials) => {
         try {
             const { email, password } = credentials;
             const normalizedEmail = email.toLowerCase().trim();
 
             const [login] = await this.conex.query(
-                'SELECT u.*, r.id_rol, r.name AS rol_name FROM users u ' +
-                'JOIN roles r ON u.id_rol = r.id_rol WHERE u.email = ? AND u.active = 1',
+                'SELECT u.*, r.id_role, r.name AS rol_name FROM users u ' +
+                'JOIN roles r ON u.id_role = r.id_role WHERE u.email = ? AND u.active = 1',
                 [normalizedEmail]
             );
 
@@ -36,7 +54,7 @@ class AuthService {
                 throw { status: 423, message: 'Cuenta bloqueada temporalmente. Intenta más tarde.' };
             }
 
-            const isPasswordValid = await this.comparePassword(password, user.pass);
+            const isPasswordValid = await this.comparePassword(password, user.password);
 
             if (!isPasswordValid) {
                 // Incrementar intentos fallidos
@@ -64,7 +82,7 @@ class AuthService {
  /*
                 user:
                 id_user
-                id_rol
+                id_role
                 email
                 name
                 password
@@ -75,7 +93,7 @@ class AuthService {
 
             return {
                 id_user: user.id_user,
-                id_rol: user.id_rol,
+                id_role: user.id_role,
                 rol_name: user.rol_name,
                 email: user.email,
                 name: user.name,
