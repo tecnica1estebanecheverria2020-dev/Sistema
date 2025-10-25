@@ -10,6 +10,7 @@ export const UserProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const checkSession = async () => {      
+    if (window.location.pathname === '/auth') return;
     try {
       const response = await axios.get('/auth/me');
       
@@ -17,7 +18,6 @@ export const UserProvider = ({ children }) => {
         setUser(response.data.user);
       }
     } catch (err) {
-      if(err?.response?.status === 401) return
       if (err?.response?.status === 403) console.warn(err?.response?.data?.message || 'Error al verificar sesión', 'error');
       console.error(err?.response?.data?.message || 'Error al verificar sesión:', err);
       handleLogout();
@@ -38,7 +38,7 @@ export const UserProvider = ({ children }) => {
       console.error('Error al cerrar sesión:', err?.response?.data?.message || 'Error al cerrar sesión');
     } finally {
       setUser(null);
-      navigate('/');
+      navigate('/auth');
       window.location.reload();
     }
   };

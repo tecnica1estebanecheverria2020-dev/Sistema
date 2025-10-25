@@ -1,5 +1,5 @@
 // Componentes
-import Nav from './shared/components/Nav/Nav.jsx';
+import Sidebar from './shared/components/Sidebar/Sidebar.jsx';
 // import Footer from './components/Footer/Footer.jsx';
 // Dependencias
 import { Outlet, useLocation } from "react-router-dom";
@@ -8,27 +8,22 @@ import useUser from './shared/hooks/useUser.js';
 
 export default function Layout() {
   const location = useLocation();
-  const { user, loading } = useUser();
+  const { loading, checkSession } = useUser();
 
   useEffect(() => {
     window.scrollTo(0, 0);
 
     // Si esta cargando podriamos mostrar una pantalla de carga
     if (loading) return;
-    // checkSession();
-  }, [location, loading, user]);
+    checkSession();
+  }, [location, loading]);
 
   return (
-    <>
-      <header>
-        <Nav />
-      </header>
+    <div className="layout">
+       { !location.pathname.startsWith('/auth') && <Sidebar /> }
       <main>
         <Outlet />
       </main>
-      <footer>
-        {/* <Footer /> */}
-      </footer>
-    </>
+    </div>
   );
 };
