@@ -14,6 +14,12 @@ export async function requireAuth(req, res, next) {
   try {
     const decoded = verifyToken(token);
 
+    // Si es usuario demo, permitir acceso sin verificar en la base de datos
+    if (decoded.id_user === 999) {
+      req.user = decoded;
+      return next();
+    }
+
     const [isDesactivated] = await pool.query('SELECT active FROM users WHERE id_user = ?', [decoded.id_user]);
     if (!isDesactivated[0].active) {
       return res.status(403).json({

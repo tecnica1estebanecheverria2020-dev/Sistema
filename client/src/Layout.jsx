@@ -9,6 +9,7 @@ import useUser from './shared/hooks/useUser.js';
 export default function Layout() {
   const location = useLocation();
   const { loading, checkSession } = useUser();
+  const isAuthPage = location.pathname.startsWith('/auth');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -19,8 +20,8 @@ export default function Layout() {
   }, [location, loading]);
 
   return (
-    <div className="layout">
-       { !location.pathname.startsWith('/auth') && <Sidebar /> }
+    <div className={`layout ${!isAuthPage ? 'with-sidebar' : ''}`}>
+       { !isAuthPage && <Sidebar /> }
       <main>
         <Outlet />
       </main>

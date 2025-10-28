@@ -1,16 +1,47 @@
+@font-face {
+  font-family: 'Urbanist';
+  src: url('./assets/fonts/Urbanist.ttf');
+}
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Urbanist', system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
+/* Layout principal */
 .layout {
   display: flex;
   width: 100%;
   height: 100%;
+  
+  background: #6b1426;
 }
 
+/* Contenido principal */
 main {
+  flex: 1;
   min-height: 100vh;
+  height: 100%;
+  margin-left: 0; /* Sin margen por defecto */
+  background:  #8b1538ca;
+  transition: margin-left 0.3s ease;
+}
+
+/* Aplicar margen solo cuando hay sidebar */
+.layout.with-sidebar main {
+  margin-left: 280px; /* Actualizado de 320px a 280px */
+}
+
+/* Media queries para responsive */
+@media (max-width: 1024px) {
+  .layout.with-sidebar main {
+    margin-left: 280px; /* Actualizado de 320px a 280px */
+  }
+}
+
+@media (max-width: 768px) {
+  .layout.with-sidebar main {
+    margin-left: 280px; /* Actualizado de 320px a 280px */
+  }
 }

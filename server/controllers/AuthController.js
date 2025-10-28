@@ -76,6 +76,36 @@ class AuthController {
             user: req.user
         });
     };
+
+    demo = (req, res) => {
+        try {
+            // Crear un usuario demo con permisos básicos
+            const demoUser = {
+                id_user: 999,
+                id_role: 1,
+                rol_name: 'Demo',
+                email: 'demo@sistema.com',
+                name: 'Usuario Demo'
+            };
+
+            const token = generateToken(demoUser);
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: false, // false para desarrollo local
+                sameSite: 'Strict',
+                maxAge: 1000 * 60 * 60 * 24, // 1 día para demo
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Sesión demo iniciada correctamente',
+                user: demoUser
+            });
+        } catch (err) {
+            return handleError(res, err);
+        }
+    };
 }
 
 export default AuthController;
