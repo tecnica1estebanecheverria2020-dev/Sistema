@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 25-10-2025 a las 22:42:33
+-- Tiempo de generación: 30-10-2025 a las 22:47:28
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.0.30
 
@@ -34,7 +34,7 @@ CREATE TABLE `inventory` (
   `category` varchar(100) NOT NULL,
   `amount` int(11) DEFAULT 0,
   `available` int(11) DEFAULT 0,
-  `state` enum('activo','inactivo','mantenimiento') DEFAULT 'activo',
+  `state` enum('Disponible','Mantenimiento','No disponible') NOT NULL DEFAULT 'Disponible',
   `location` varchar(100) DEFAULT NULL,
   `description` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -44,7 +44,8 @@ CREATE TABLE `inventory` (
 --
 
 INSERT INTO `inventory` (`id_inventory`, `name`, `code`, `category`, `amount`, `available`, `state`, `location`, `description`) VALUES
-(1, 'Martillo', '2', 'Herramienta', 5, 2, 'activo', 'Pañol', NULL);
+(1, 'Martillo', '2', 'Herramienta', 5, 2, 'Disponible', 'Pañol', NULL),
+(5, 'Net', 'ASFS', 'Computadoras', 2, 2, 'Mantenimiento', 'Atras', 'DEscriptcion');
 
 -- --------------------------------------------------------
 
@@ -168,7 +169,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT de la tabla `inventory`
 --
 ALTER TABLE `inventory`
-  MODIFY `id_inventory` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_inventory` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `loans`

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiPackage, FiFilter, FiBox, FiChevronDown } from 'react-icons/fi';
-import { useInventario } from '../../shared/hooks/useInventario';
 import './style.css';
+import { useInventario } from '../../shared/hooks/useInventario';
+import ModalProduct from './ModalProduct';
+import CustomSelect from './CustomSelect';
 
 const Inventario = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,6 +16,7 @@ const Inventario = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [formData, setFormData] = useState({
     code: '',
+    name: '',
     category: '',
     amount: 0,
     available: 0,
@@ -23,41 +26,6 @@ const Inventario = () => {
   });
 
   const { items, loading, error, fetchItems, createItem, updateItem, deleteItem } = useInventario();
-
-  // Componente Select personalizado
-  const CustomSelect = ({ value, onChange, options, placeholder, className = '' }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    
-    return (
-      <div className={`custom-select ${className} ${isOpen ? 'open' : ''}`}>
-        <div 
-          className="select-trigger"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <span className="select-value">
-            {value || placeholder}
-          </span>
-          <FiChevronDown className="select-arrow" />
-        </div>
-        {isOpen && (
-          <div className="select-dropdown">
-            {options.map((option, index) => (
-              <div
-                key={index}
-                className={`select-option ${value === option.value ? 'selected' : ''}`}
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-              >
-                {option.label}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   useEffect(() => {
     fetchItems();
@@ -70,6 +38,7 @@ const Inventario = () => {
   const filteredItems = items.filter(item => {
     const matchesSearch = 
       item.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -99,6 +68,7 @@ const Inventario = () => {
     setCurrentItem(item);
     setFormData({
       code: item.code || '',
+      name: item.name || '',
       category: item.category || '',
       amount: Number(item.amount ?? 0),
       available: Number(item.available ?? 0),
@@ -120,6 +90,7 @@ const Inventario = () => {
 
     const payload = {
       code: formData.code,
+      name: formData.name,
       category: formData.category,
       amount: Number(formData.amount),
       available: Number(formData.available),
@@ -142,6 +113,7 @@ const Inventario = () => {
   const resetForm = () => {
     setFormData({
       code: '',
+      name: '',
       category: '',
       amount: 0,
       available: 0,
@@ -229,7 +201,7 @@ const Inventario = () => {
               { value: '', label: 'Todas las categorías' },
               ...categories.map(cat => ({ value: cat, label: cat }))
             ]}
-            placeholder="Categoría"
+            placeholder="Todas las categorías"
             className="inventory-filter-select"
           />
           
@@ -242,8 +214,29 @@ const Inventario = () => {
               { value: 'Mantenimiento', label: 'Mantenimiento' },
               { value: 'No disponible', label: 'No disponible' }
             ]}
-            placeholder="Estado"
+            placeholder="Todos los estados"
             className="inventory-filter-select"
+          />
+          
+          
+          <CustomSelect
+            showValue={false}
+            value={`${sortBy}-${sortOrder}`}
+            onChange={(value) => {
+              const [field, order] = value.split('-');
+              setSortBy(field);
+              setSortOrder(order);
+            }}
+            options={[
+              { value: 'name-asc', label: 'Nombre A-Z' },
+              { value: 'name-desc', label: 'Nombre Z-A' },
+              { value: 'category-asc', label: 'Categoría A-Z' },
+              { value: 'category-desc', label: 'Categoría Z-A' },
+              { value: 'amount-desc', label: 'Cantidad mayor' },
+              { value: 'amount-asc', label: 'Cantidad menor' }
+            ]}
+            placeholder="Ordenar por..."
+            className="inventory-sort-select"
           />
           
           <div className="inventory-location-filter">
@@ -255,24 +248,7 @@ const Inventario = () => {
               className="inventory-location-input"
             />
           </div>
-          
-          <CustomSelect
-            value={`${sortBy}-${sortOrder}`}
-            onChange={(value) => {
-              const [field, order] = value.split('-');
-              setSortBy(field);
-              setSortOrder(order);
-            }}
-            options={[
-              { value: 'name-asc', label: 'Nombre A-Z' },
-              { value: 'name-desc', label: 'Nombre Z-A' },
-              { value: 'category-asc', label: 'Categoría A-Z' },
-              { value: 'amount-desc', label: 'Cantidad mayor' },
-              { value: 'amount-asc', label: 'Cantidad menor' }
-            ]}
-            placeholder="Ordenar por"
-            className="inventory-sort-select"
-          />
+
         </div>
 
         <div className="inventory-results-count">
@@ -294,6 +270,7 @@ const Inventario = () => {
           <table className="inventory-table">
             <thead className="inventory-table-header">
               <tr className="inventory-table-row">
+                <th className="inventory-table-cell inventory-header-cell">Codigo</th>
                 <th className="inventory-table-cell inventory-header-cell">Nombre</th>
                 <th className="inventory-table-cell inventory-header-cell">Categoría</th>
                 <th className="inventory-table-cell inventory-header-cell">Cantidad</th>
@@ -307,8 +284,11 @@ const Inventario = () => {
               {filteredItems.map((item) => (
                 <tr key={item.id_inventory} className="inventory-table-row">
                   <td className="inventory-table-cell">
+                    <span className="inventory-code-text">{item.code}</span>
+                  </td>
+                  <td className="inventory-table-cell">
                     <div className="inventory-item-name">
-                      <span className="inventory-name-text">{item.code}</span>
+                      <span className="inventory-name-text">{item.name}</span>
                       {item.description && (
                         <span className="inventory-description-text">{item.description}</span>
                       )}
@@ -358,147 +338,14 @@ const Inventario = () => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="inventory-modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="inventory-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="inventory-modal-header">
-              <div className="inventory-modal-header-content">
-                <FiBox className="inventory-modal-icon" />
-                <div className="inventory-modal-header-text">
-                  <h2 className="inventory-modal-title">
-                    {currentItem ? 'Editar Ítem' : 'Agregar Ítem'}
-                  </h2>
-                  <p className="inventory-modal-subtitle">
-                    {currentItem ? 'Modifica los datos del ítem' : 'Completa los datos del nuevo ítem'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="inventory-modal-form">
-              <div className="inventory-form-grid">
-                <div className="inventory-form-group">
-                  <label className="inventory-form-label">Código</label>
-                  <input
-                    type="text"
-                    value={formData.code}
-                    onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
-                    className="inventory-form-input"
-                    placeholder="Ej: NB-001"
-                    required
-                  />
-                </div>
-
-                <div className="inventory-form-group">
-                  <label className="inventory-form-label">Nombre del Ítem</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="inventory-form-input"
-                    placeholder="Ej: Notebook HP ProBook"
-                    required
-                  />
-                </div>
-
-                <div className="inventory-form-group">
-                  <label className="inventory-form-label">Categoría</label>
-                  <CustomSelect
-                    value={formData.category}
-                    onChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                    options={[
-                      { value: '', label: 'Seleccionar categoría' },
-                      { value: 'Computadoras', label: 'Computadoras' },
-                      { value: 'Periféricos', label: 'Periféricos' },
-                      { value: 'Mobiliario', label: 'Mobiliario' },
-                      { value: 'Electrónicos', label: 'Electrónicos' },
-                      { value: 'Otros', label: 'Otros' }
-                    ]}
-                    placeholder="Seleccionar categoría"
-                    className="inventory-form-select"
-                  />
-                </div>
-
-                <div className="inventory-form-group">
-                  <label className="inventory-form-label">Estado</label>
-                  <CustomSelect
-                    value={formData.state}
-                    onChange={(value) => setFormData(prev => ({ ...prev, state: value }))}
-                    options={[
-                      { value: 'Disponible', label: 'Disponible' },
-                      { value: 'Mantenimiento', label: 'Mantenimiento' },
-                      { value: 'No disponible', label: 'No disponible' }
-                    ]}
-                    placeholder="Seleccionar estado"
-                    className="inventory-form-select"
-                  />
-                </div>
-
-                <div className="inventory-form-group">
-                  <label className="inventory-form-label">Cantidad Total</label>
-                  <input
-                    type="number"
-                    value={formData.amount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, amount: parseInt(e.target.value) || 0 }))}
-                    className="inventory-form-input"
-                    min="0"
-                    required
-                  />
-                </div>
-
-                <div className="inventory-form-group">
-                  <label className="inventory-form-label">Cantidad Disponible</label>
-                  <input
-                    type="number"
-                    value={formData.available}
-                    onChange={(e) => setFormData(prev => ({ ...prev, available: parseInt(e.target.value) || 0 }))}
-                    className="inventory-form-input"
-                    min="0"
-                    max={formData.amount}
-                    required
-                  />
-                </div>
-
-                <div className="inventory-form-group inventory-form-group-full">
-                  <label className="inventory-form-label">Ubicación</label>
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                    className="inventory-form-input"
-                    placeholder="Ej: Oficina 201, Estante A"
-                  />
-                </div>
-
-                <div className="inventory-form-group inventory-form-group-full">
-                  <label className="inventory-form-label">Descripción</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    className="inventory-form-textarea"
-                    placeholder="Descripción detallada del ítem..."
-                    rows="3"
-                  />
-                </div>
-              </div>
-
-              <div className="inventory-modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="inventory-cancel-button"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="inventory-submit-button"
-                >
-                  {currentItem ? 'Actualizar' : 'Agregar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ModalProduct
+          isModalOpen={isModalOpen}
+          setIsModalOpen={setIsModalOpen}
+          currentItem={currentItem}
+          handleSubmit={handleSubmit}
+          formData={formData}
+          setFormData={setFormData}
+        />
       )}
     </div>
   );
