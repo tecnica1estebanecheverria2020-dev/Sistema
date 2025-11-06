@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './style.css';
-import useUser from '../../shared/hooks/useUser.js';
+import useAuth from '../../shared/hooks/useAuth.js';
 import axios from '../../shared/api/axios';
 import { 
   FaBox, 
@@ -16,7 +16,7 @@ import {
 } from 'react-icons/fa';
 
 export default function Auth() {
-  const { handleLogin } = useUser();
+  const { handleLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});

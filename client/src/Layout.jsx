@@ -4,11 +4,11 @@ import Sidebar from './shared/components/Sidebar/Sidebar.jsx';
 // Dependencias
 import { Outlet, useLocation } from "react-router-dom";
 import { useEffect } from 'react';
-import useUser from './shared/hooks/useUser.js';
+import useAuth from './shared/hooks/useAuth.js';
 
 export default function Layout() {
   const location = useLocation();
-  const { loading, checkSession } = useUser();
+  const { loading, checkSession } = useAuth();
   const isAuthPage = location.pathname.startsWith('/auth');
 
   useEffect(() => {
