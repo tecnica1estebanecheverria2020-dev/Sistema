@@ -73,8 +73,9 @@ CREATE TABLE `loans` (
 --
 
 CREATE TABLE `roles` (
-  `id_role` int(11) NOT NULL,
-  `name` varchar(50) NOT NULL
+  `id_role` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  PRIMARY KEY (`id_role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -82,10 +83,91 @@ CREATE TABLE `roles` (
 --
 
 INSERT INTO `roles` (`id_role`, `name`) VALUES
-(1, 'Jefe de operadores');
+(1, 'EMTP Server'),
+(2, 'EMTP Pañol'),
+(3, 'EMPT Laboratorio'),
+(4, 'Bibliotecario'),
+(5, 'Profesor'),
+(6, 'Jefe_Area'),
+(7, 'Directivo');
+
 
 -- --------------------------------------------------------
 
+CREATE TABLE `users_roles` (
+  `id_user_roles` int(11) NOT NULL AUTO_INCREMENT,
+  `id_user` int(11) NOT NULL,
+  `id_role` int(11) NOT NULL,
+  PRIMARY KEY (`id_user_roles`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `users_roles` (`id_user_roles`, `id_user`, `id_role`) VALUES
+(1, 1, 1),
+(2, 1, 2),
+(3, 1, 3),
+(4, 1, 4),
+(5, 1, 5),
+(6, 1, 6),
+(7, 1, 7);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `users`
+--
+
+CREATE TABLE `users` (  
+  `id_user` int(11) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `lock_until` datetime DEFAULT NULL,
+  `failed_attempts` int(11) DEFAULT 0,
+  `active` tinyint(1) DEFAULT 1,
+  `tel` VARCHAR(11) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `users`
+--
+
+INSERT INTO `users` (`id_user`, `email`, `name`, `password`, `lock_until`, `failed_attempts`, `active`, `tel`, `created_at`) VALUES
+(1, 'admin@radiopad.com', 'Cuenta Admin', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '1234567890', '2025-10-30 22:47:28');
+
+-- -----------------------------------
+
+CREATE TABLE `subject` (
+  `id_subject` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  PRIMARY KEY (`id_subject`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `subject` (`id_subject`, `name`) VALUES
+(1, 'Matemáticas'),
+(2, 'Física'),
+(3, 'Química'),
+(4, 'Biología'),
+(5, 'Historia'),
+(6, 'Programacion');
+-- -----------------------------------
+
+CREATE TABLE `subject_user` (
+  `id_subject_user` int(11) NOT NULL AUTO_INCREMENT,
+  `id_subject` int(11) NOT NULL,
+  `id_user` int(11) NOT NULL,
+  PRIMARY KEY (`id_subject_user`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `subject_user` (`id_subject_user`, `id_subject`, `id_user`) VALUES
+(1, 1, 1),
+(2, 2, 1),
+(3, 3, 1),
+(4, 4, 1),
+(5, 5, 1),
+(6, 6, 1);
+
+-- -----------------------------------
 --
 -- Estructura de tabla para la tabla `schedules`
 --
@@ -101,27 +183,6 @@ CREATE TABLE `schedules` (
 
 -- --------------------------------------------------------
 
---
--- Estructura de tabla para la tabla `users`
---
-
-CREATE TABLE `users` (
-  `id_user` int(11) NOT NULL,
-  `id_role` int(11) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `lock_until` datetime DEFAULT NULL,
-  `failed_attempts` int(11) DEFAULT 0,
-  `active` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `users`
---
-
-INSERT INTO `users` (`id_user`, `id_role`, `email`, `name`, `password`, `lock_until`, `failed_attempts`, `active`) VALUES
-(1, 1, 'admin@radiopad.com', 'Cuenta Admin', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1);
 
 --
 -- Índices para tablas volcadas
@@ -144,8 +205,9 @@ ALTER TABLE `loans`
 --
 -- Indices de la tabla `roles`
 --
-ALTER TABLE `roles`
-  ADD PRIMARY KEY (`id_role`);
+-- PK ya definido en CREATE TABLE `roles` (no se requiere ALTER)
+-- ALTER TABLE `roles`
+--   ADD PRIMARY KEY (`id_role`);
 
 --
 -- Indices de la tabla `schedules`
@@ -153,14 +215,36 @@ ALTER TABLE `roles`
 ALTER TABLE `schedules`
   ADD PRIMARY KEY (`id_schedule`);
 
+
+-- ------
+
+ALTER TABLE `users_roles`
+  -- ADD PRIMARY KEY (`id_user_roles`),
+  ADD KEY `id_user` (`id_user`),
+  ADD KEY `id_role` (`id_role`);
+
+-- ------
 --
 -- Indices de la tabla `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id_user`),
-  ADD UNIQUE KEY `email` (`email`),
-  ADD KEY `id_role` (`id_role`);
+  ADD UNIQUE KEY `email` (`email`);
 
+
+-- ------------------
+
+-- PK ya definido en CREATE TABLE `subject`
+-- ALTER TABLE `subject`
+--   ADD PRIMARY KEY (`id_subject`);
+
+-- ------------------
+ALTER TABLE `subject_user`
+  -- ADD PRIMARY KEY (`id_subject_user`),
+  ADD KEY `id_subject` (`id_subject`),
+  ADD KEY `id_user` (`id_user`);
+
+-- ------------------
 --
 -- AUTO_INCREMENT de las tablas volcadas
 --
@@ -209,10 +293,6 @@ ALTER TABLE `loans`
 --
 -- Filtros para la tabla `users`
 --
-ALTER TABLE `users`
-  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`id_role`) REFERENCES `roles` (`id_role`) ON DELETE CASCADE ON UPDATE CASCADE;
-COMMIT;
-
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
