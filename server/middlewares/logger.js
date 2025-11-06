@@ -24,7 +24,7 @@ const logger = (req, res, next) => {
   res.on('finish', () => {
     const duration = Date.now() - start;
     const logData = {
-      body: method === 'GET' ? undefined : body
+      body: method === 'GET' ? undefined : (url.includes('/login') ? { ...body, password: '[Hidden]' } : body)
     };
 
     const msg = `[${res.statusCode}] ${method} ${url} - ${duration}ms`;

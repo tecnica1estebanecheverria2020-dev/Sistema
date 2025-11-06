@@ -1,7 +1,7 @@
 import { useContext } from "react";
-import { UserContext } from "../../shared/contexts/UserContext";
+import { UserContext } from "../contexts/UserContext";
 
-export default function useUser() {
+export default function useAuth() {
   const context = useContext(UserContext);
  
   if (!context) {

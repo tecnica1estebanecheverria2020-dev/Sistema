@@ -20,15 +20,26 @@ class AuthService {
         const normalizedEmail = email.toLowerCase().trim();
 
         const [login] = await this.conex.query(
-            'INSERT INTO users (name, email, password, id_role) VALUES (?, ?, ?, ?)',
-            [name, normalizedEmail, hashedPassword, id_role]
+            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+            [name, normalizedEmail, hashedPassword]
+        );
+
+        await this.conex.query(
+            'INSERT INTO users_roles (id_user, id_role) VALUES (?, ?)',
+            [login.insertId, id_role]
+        );
+
+        const [role] = await this.conex.query(
+            'SELECT name FROM roles WHERE id_role = ?',
+            [id_role]
         );
 
         return {
             id_user: login.insertId,
             name,
             email: normalizedEmail,
-            id_role
+            id_role,
+            rol_name: role[0].name
         };
     }
 
@@ -39,7 +50,8 @@ class AuthService {
 
             const [login] = await this.conex.query(
                 'SELECT u.*, r.id_role, r.name AS rol_name FROM users u ' +
-                'JOIN roles r ON u.id_role = r.id_role WHERE u.email = ? AND u.active = 1',
+                'JOIN users_roles ur ON u.id_user = ur.id_user ' +
+                'JOIN roles r ON ur.id_role = r.id_role WHERE u.email = ? AND u.active = 1',
                 [normalizedEmail]
             );
 
@@ -79,17 +91,6 @@ class AuthService {
                 [user.id_user]
             );
 
- /*
-                user:
-                id_user
-                id_role
-                email
-                name
-                password
-                lock_until
-                failed_attempts
-                active
-                */
 
             return {
                 id_user: user.id_user,

@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import './style.css';
-import useUser from '../../hooks/useUser';
+import useAuth from '../../hooks/useAuth.js';
 import { 
     FiHome, 
     FiPackage, 
@@ -9,16 +9,16 @@ import {
     FiClock, 
     FiMessageSquare, 
     FiSettings,
-    FiUser,
     FiLogOut,
     FiSearch,
     FiBell,
-    FiChevronDown
+    FiChevronDown,
+    FiUsers
 } from 'react-icons/fi';
 import { FaBox } from 'react-icons/fa';
 
 export default function Sidebar() {
-    const { user, handleLogout } = useUser();
+    const { user, handleLogout } = useAuth();
     const location = useLocation();
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
@@ -28,11 +28,17 @@ export default function Sidebar() {
         { path: '/Prestamos', icon: FiBook, label: 'Préstamos', badge: null },
         { path: '/Horarios', icon: FiClock, label: 'Horarios', badge: null },
         { path: '/Comunicados', icon: FiMessageSquare, label: 'Comunicados', badge: null },
+        { path: '/Usuarios', icon: FiUsers, label: 'Usuarios', badge: null },
         { path: '/Configuracion', icon: FiSettings, label: 'Configuración', badge: null }
     ];
 
     const toggleUserDropdown = () => {
         setIsUserDropdownOpen(!isUserDropdownOpen);
+    };
+
+    const getInitials = (name) => {
+        const names = name.split(' ');
+        return names.map(n => n[0]).join('').toUpperCase();
     };
 
     return (
@@ -90,11 +96,11 @@ export default function Sidebar() {
                         onClick={toggleUserDropdown}
                     >
                         <div className="sidebar-user-avatar">
-                            <span>AD</span>
+                            <span>{getInitials(user?.name || 'User')}</span>
                         </div>
                         <div className="sidebar-user-info">
-                            <span className="sidebar-user-name">Admin</span>
-                            <span className="sidebar-user-email">admin@tecnistock.edu</span>
+                            <span className="sidebar-user-name">{user?.name || 'User'}</span>
+                            <span className="sidebar-user-email">{user?.email || 'user@tecnistock.edu'}</span>
                         </div>
                         <FiChevronDown className={`sidebar-user-chevron ${isUserDropdownOpen ? 'open' : ''}`} />
                     </button>

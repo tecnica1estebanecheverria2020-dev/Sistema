@@ -3,20 +3,13 @@ import { useEffect } from 'react';
 import axios from '../../shared/api/axios'
 import useNotification from '../../shared/hooks/useNotification.jsx'
 import { 
-  FiPackage, 
   FiCheckCircle, 
   FiClock, 
   FiAlertTriangle,
-  FiTrendingUp,
-  FiUsers,
   FiCalendar,
-  FiSettings,
-  FiSearch,
   FiPlus,
-  FiArrowRight,
-  FiActivity
 } from 'react-icons/fi';
-import { FaBox, FaCube, FaLayerGroup } from 'react-icons/fa';
+import { FaBox, FaLayerGroup } from 'react-icons/fa';
 import './style.css';
 
 export default function Dashboard() {
@@ -175,21 +168,27 @@ export default function Dashboard() {
       title: 'Gestionar Inventario',
       subtitle: 'Agregar o editar items',
       icon: FaLayerGroup,
-      action: 'inventory'
+      action: () => {
+        navigate('/inventario');
+      }
     },
     {
       id: 2,
       title: 'Nuevo Préstamo',
       subtitle: 'Registrar préstamo',
       icon: FiPlus,
-      action: 'loan'
+      action: () => {
+        navigate('/prestamos');
+      }
     },
     {
       id: 3,
       title: 'Ver Horarios',
       subtitle: 'Calendario y agenda',
       icon: FiCalendar,
-      action: 'schedule'
+      action: () => {
+        navigate('/horarios');
+      }
     }
   ];
 
@@ -267,7 +266,7 @@ export default function Dashboard() {
             {quickActions.map((action) => {
               const IconComponent = action.icon;
               return (
-                <a key={action.id} href="#" className="action-card">
+                <a key={action.id} href="#" className="action-card" onClick={() => action.action()}>
                   <IconComponent className="action-icon" />
                   <h4 className="action-title">{action.title}</h4>
                   <p className="action-subtitle">{action.subtitle}</p>
