@@ -1,5 +1,7 @@
 // Rutas
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 // Notificaciones
 
 // Layout
@@ -21,6 +23,7 @@ export default function App() {
   return (
     <Router>
       <UserProvider>
+        <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
         <Routes>
           {/* Rutas del Cliente */}
           <Route path="/" element={<Layout />}>

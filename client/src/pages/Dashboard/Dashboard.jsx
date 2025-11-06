@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import axios from '../../shared/api/axios'
+import useNotification from '../../shared/hooks/useNotification.jsx'
 import { 
   FiPackage, 
   FiCheckCircle, 
@@ -18,6 +21,25 @@ import './style.css';
 
 export default function Dashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [loading, setLoading] = useState(true);
+  const notify = useNotification();
+  const [serverStatus, setServerStatus] = useState({
+    success: false,
+    message: '',
+    connection: false
+  });
+  const [dashboardData, setDashboardData] = useState({
+    inventoryTotal: 0,
+    inventoryAvailable: 0,
+    activeLoans: 0,
+    schedulesCount: 0,
+  });
+  const [todayLoans, setTodayLoans] = useState([]);
+
+  //para que no moleste
+  useEffect(() => {
+
+  }, [loading, serverStatus]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -27,11 +49,87 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  // Obtener datos del dashboard al montar el componente
+  useEffect(() => {
+    fetchData();
+    fetchTodayLoans();
+    checkApi();
+  }, []);
+
+  // Actualizar cada 10 segundos (datos del dashboard y estado de API)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData();
+      fetchTodayLoans();
+      checkApi();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+   const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/dashboard/data');
+      const data = response?.data?.data || {};
+      setDashboardData(prev => ({
+        ...prev,
+        inventoryTotal: Number(data.totalInventoryItems || 0),
+        inventoryAvailable: Number(data.availableInventoryItems || 0),
+        activeLoans: Number(data.activeLoans || 0),
+        schedulesCount: Number(data.totalSchedules || 0),
+      }));  
+    } catch (error) {
+      notify(error?.message || 'Error al obtener los datos del dashboard', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTodayLoans = async () => {
+    try {
+      const resp = await axios.get('/dashboard/today-loans');
+      const loans = resp?.data?.loans || [];
+      setTodayLoans(loans.map((l, idx) => ({
+        id: idx + 1,
+        item: l.item_name,
+        professor: l.user_name,
+        time: l.time,
+      })));
+    } catch (error) {
+      notify(error?.message || 'Error al obtener préstamos de hoy', 'error');
+    }
+  };
+
+  const checkApi = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/test');
+      if (response.data?.success) {
+        setServerStatus({
+          success: true,
+          message: response.data?.message || 'Servidor operativo',
+          connection: true
+        });
+      } else {
+        notify(response.data?.message || 'El servidor está caído', 'error');
+      }
+    } catch (err) {
+      console.error(err?.response?.data?.message || 'El servidor está caído:', err);
+      setServerStatus({
+        success: false,
+        message: err?.response?.data?.message || 'El servidor está caído',
+        connection: false
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const statsCards = [
     {
       id: 1,
       title: 'Total Inventario',
-      value: '212',
+      value: String(dashboardData.inventoryTotal),
       subtitle: 'items registrados',
       icon: FaBox,
       category: 'inventory'
@@ -39,7 +137,7 @@ export default function Dashboard() {
     {
       id: 2,
       title: 'Disponibles',
-      value: '158',
+      value: String(dashboardData.inventoryAvailable),
       subtitle: 'items disponibles',
       icon: FiCheckCircle,
       category: 'available'
@@ -47,7 +145,7 @@ export default function Dashboard() {
     {
       id: 3,
       title: 'Préstamos Activos',
-      value: '3',
+      value: String(dashboardData.activeLoans),
       subtitle: 'en curso',
       icon: FiClock,
       category: 'loans'
@@ -55,7 +153,7 @@ export default function Dashboard() {
     {
       id: 4,
       title: 'No Devueltos',
-      value: '0',
+      value: String(dashboardData.activeLoans),
       subtitle: 'pendientes',
       icon: FiAlertTriangle,
       category: 'pending'
@@ -63,39 +161,13 @@ export default function Dashboard() {
     {
       id: 5,
       title: 'Horarios',
-      value: '120',
+      value: String(dashboardData.schedulesCount),
       subtitle: 'programados',
       icon: FiCalendar,
       category: 'returned'
     }
   ];
 
-  const todayLoans = [
-    {
-      id: 1,
-      item: 'Alargue 5m',
-      professor: 'Prof. Fernández',
-      time: '10:00',
-      status: 'active',
-      room: 'Lab A'
-    },
-    {
-      id: 2,
-      item: 'Proyector Epson',
-      professor: 'Prof. Rodríguez',
-      time: '09:15',
-      status: 'returned',
-      room: 'Aula 3'
-    },
-    {
-      id: 3,
-      item: 'Netbook HP ProBook',
-      professor: 'Prof. García',
-      time: '08:30',
-      status: 'active',
-      room: 'Lab B'
-    }
-  ];
 
   const quickActions = [
     {
@@ -216,10 +288,6 @@ export default function Dashboard() {
           <div className="activity-stat">
             <div className="activity-stat-value">24</div>
             <div className="activity-stat-label">Préstamos esta semana</div>
-          </div>
-          <div className="activity-stat">
-            <div className="activity-stat-value">95%</div>
-            <div className="activity-stat-label">Tasa de devolución</div>
           </div>
           <div className="activity-stat">
             <div className="activity-stat-value">8</div>

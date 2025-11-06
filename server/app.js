@@ -15,6 +15,7 @@ import inventarioRoutes from './routes/inventario.js';
 import loansRoutes from './routes/loans.js';
 import rolesRoutes from './routes/roles.js';
 import schedulesRoutes from './routes/schedules.js';
+import dashboardRoutes from './routes/dashboard.js';
 
 // Middlewares
 const app = express();
@@ -47,10 +48,16 @@ app.use('/api/inventario', inventarioRoutes);
 app.use('/api/loans', loansRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/schedules', schedulesRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Testeo de api
 app.get('/api/test', async (req, res) => {
-    res.send('Todo ok!')
+    res.status(200).json({
+      success: true,
+      message: 'Servidor operativo',
+      connection: true,
+      timestamp: new Date().toISOString()
+    });
 });
 
 // Servir archivos estaticos de la build de Vite

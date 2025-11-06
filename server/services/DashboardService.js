@@ -1,0 +1,71 @@
+import moment from 'moment';
+import 'moment/locale/es.js';
+
+class DashboardService {
+  constructor(conex) {
+    this.conex = conex;
+
+    moment.locale('es');
+  }
+
+  // Obtener datos para el dashboard
+  getData = async () => {
+    try {
+      const [inventoryTotal] = await this.conex.query(`
+        SELECT COUNT(*) AS totalInventory FROM inventory
+      `);
+
+      const [inventoryAvailable] = await this.conex.query(`
+        SELECT COUNT(*) AS availableItems FROM inventory WHERE state = 'Disponible'
+      `);
+
+      const [activeLoans] = await this.conex.query(`
+        SELECT COUNT(*) AS activeLoans FROM loans WHERE state = 'activo'
+      `);
+
+      const [schedulesCount] = await this.conex.query(`
+        SELECT COUNT(*) AS totalSchedules FROM schedules
+      `);
+
+      return {
+
+        totalInventoryItems: inventoryTotal[0]?.totalInventory ?? 0,
+        availableInventoryItems: inventoryAvailable[0]?.availableItems ?? 0,
+        activeLoans: activeLoans[0]?.activeLoans ?? 0,
+        totalSchedules: schedulesCount[0]?.totalSchedules ?? 0,
+        
+      };
+    } catch (error) {
+      throw { status: 500, message: 'Error al obtener los datos del dashboard', cause: error };
+    }
+  };
+
+  // Obtener préstamos con fecha de hoy
+  getTodayLoans = async () => {
+    try {
+      const [rows] = await this.conex.query(`
+        SELECT 
+          l.date_loan,
+          u.name AS user_name,
+          i.name AS item_name
+        FROM loans l
+        JOIN users u ON l.id_user = u.id_user
+        JOIN inventory i ON l.id_inventory = i.id_inventory
+        WHERE DATE(l.date_loan) = CURDATE()
+        ORDER BY l.date_loan DESC
+      `);
+
+      const loans = rows.map(r => ({
+        time: moment(r.date_loan).format('HH:mm'),
+        item_name: r.item_name,
+        user_name: r.user_name,
+      }));
+
+      return loans;
+    } catch (error) {
+      throw { status: 500, message: 'Error al obtener los préstamos de hoy', cause: error };
+    }
+  };
+}
+
+export default DashboardService;
