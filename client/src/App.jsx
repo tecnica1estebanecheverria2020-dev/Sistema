@@ -13,6 +13,7 @@ import Prestamos from './pages/Prestamos/Prestamos.jsx';
 import Horarios from './pages/Horarios/Horarios.jsx';
 import Comunicados from './pages/Comunicados/Comunicados.jsx';
 import Configuracion from './pages/Configuracion/Configuracion.jsx';
+import NotFound from './pages/NotFound/NotFound.jsx';
 
 // Provedor del usuario
 import { UserProvider } from './shared/contexts/UserContext.jsx';
@@ -32,7 +33,7 @@ export default function App() {
             <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/inventario" element={<Inventario />} />
 
-            <Route path="/*" element={<h2>404 Not Found</h2>} />
+            <Route path="/*" element={<NotFound />} />
           </Route>
         </Routes>
       </UserProvider>
