@@ -1,47 +1,84 @@
-import { useState } from "react";
-import { FiX, FiClock, FiUser, FiBook, FiMapPin } from "react-icons/fi";
-
-const AULAS = [
-  "AULA 1", "AULA 2", "AULA 3", "AULA 4", "AULA 5", "AULA 6", "AULA 7", "AULA 8", 
-  "AULA 9", "AULA 10", "AULA 11", "AULA 12", "AULA 13", "AULA 14", "AULA 15", 
-  "AULA 16", "AULA 17", "AULA 18", "AULA 19", "AULA 20", "AULA 21", 
-  "TALLER GRANDE", "LABORATORIO"
-];
-
-const MATERIAS = [
-  "LENGUAJES TECNOLOGICOS",
-  "PROCEDIMIENTOS TECNICOS", 
-  "LABORATORIO HARDWARE",
-  "LABORATORIO DE DISEÑO WEB",
-  "SISTEMAS TECNOLOGICOS IMRSC",
-  "LABORATORIO DE PROGRAMACION",
-  "SISTEMAS TECNOLOGICOS"
-];
-
-const GRUPOS = [
-  "1.1", "1.2", "1.3", "1.4", "1.5",
-  "2.1", "2.2", "2.3", "2.4", "2.5",
-  "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7",
-  "4.1", "4.2", "4.3", "4.4", "4.5",
-  "5.1", "5.2", "5.3", "5.4", "5.5",
-  "6.1", "6.2", "6.3", "6.4", "6.5",
-  "7.1", "7.2", "7.3", "7.4", "7.5"
-];
+import { useState, useEffect, useMemo } from "react";
+import { FiX, FiClock } from "react-icons/fi";
+import { schedulesService } from "../../shared/services/schedulesServices";
+import { catalogsService } from "../../shared/services/catalogsService";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 const TURNOS = ["Mañana", "Tarde"];
 
+const DAY_TO_EN = {
+  "Lunes": "Monday",
+  "Martes": "Tuesday",
+  "Miércoles": "Wednesday",
+  "Jueves": "Thursday",
+  "Viernes": "Friday",
+};
+
 export default function AddScheduleModal({ isOpen, onClose, onSave }) {
   const [formData, setFormData] = useState({
-    aula: "",
-    materia: "",
-    grupoTaller: "",
-    profesor: "",
+    id_classroom: "",
+    id_workshop_group: "",
     diaSemana: "",
     turno: "",
     horaInicio: "",
-    horaFin: ""
+    horaFin: "",
   });
+
+  // Catálogos y estados para selects
+  const [classrooms, setClassrooms] = useState([]);
+  const [workshopGroups, setWorkshopGroups] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [subjectUsers, setSubjectUsers] = useState([]);
+
+  const [selectedTeacherId, setSelectedTeacherId] = useState("");
+  const [selectedSubjectId, setSelectedSubjectId] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const loadCatalogs = async () => {
+      try {
+        const [cls, wgs, subs, tchs, sus] = await Promise.all([
+          catalogsService.getClassrooms(),
+          catalogsService.getWorkshopGroups(),
+          catalogsService.getSubjects(),
+          catalogsService.getTeachers(),
+          catalogsService.getSubjectUsers(),
+        ]);
+        setClassrooms(cls);
+        setWorkshopGroups(wgs);
+        setSubjects(subs);
+        setTeachers(tchs);
+        setSubjectUsers(sus);
+      } catch (error) {
+        console.error(error);
+        alert('Error al cargar catálogos');
+      }
+    };
+    loadCatalogs();
+  }, [isOpen]);
+
+  const availableSubjects = useMemo(() => {
+    if (!selectedTeacherId) return subjects;
+    const tid = parseInt(selectedTeacherId, 10);
+    const subjectIds = new Set(subjectUsers.filter(su => su.id_user === tid).map(su => su.id_subject));
+    return subjects.filter(s => subjectIds.has(s.id));
+  }, [selectedTeacherId, subjects, subjectUsers]);
+
+  const availableTeachers = useMemo(() => {
+    if (!selectedSubjectId) return teachers;
+    const sid = parseInt(selectedSubjectId, 10);
+    const teacherIds = new Set(subjectUsers.filter(su => su.id_subject === sid).map(su => su.id_user));
+    return teachers.filter(t => teacherIds.has(t.id));
+  }, [selectedSubjectId, teachers, subjectUsers]);
+
+  const subjectUserId = useMemo(() => {
+    const tid = parseInt(selectedTeacherId || '0', 10);
+    const sid = parseInt(selectedSubjectId || '0', 10);
+    if (!tid || !sid) return null;
+    const match = subjectUsers.find(su => su.id_user === tid && su.id_subject === sid);
+    return match ? match.id_subject_user : null;
+  }, [selectedTeacherId, selectedSubjectId, subjectUsers]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -50,39 +87,61 @@ export default function AddScheduleModal({ isOpen, onClose, onSave }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validar campos requeridos
-    const requiredFields = ['aula', 'materia', 'grupoTaller', 'profesor', 'diaSemana', 'turno', 'horaInicio', 'horaFin'];
-    const missingFields = requiredFields.filter(field => !formData[field]);
-    
-    if (missingFields.length > 0) {
+
+    // Validar campos requeridos para backend
+    const requiredFields = ['id_classroom', 'id_workshop_group', 'diaSemana', 'turno', 'horaInicio', 'horaFin'];
+    const missing = requiredFields.filter((f) => !formData[f]);
+    if (missing.length > 0) {
       alert('Por favor completa todos los campos requeridos');
       return;
     }
 
-    // Crear nuevo horario
-    const newSchedule = {
-      id: crypto.randomUUID(),
-      ...formData
-    };
+    if (!selectedTeacherId || !selectedSubjectId) {
+      alert('Selecciona docente y materia');
+      return;
+    }
 
-    onSave(newSchedule);
-    handleClose();
+    if (!subjectUserId) {
+      alert('La combinación Docente + Materia no está registrada');
+      return;
+    }
+
+    // Construir payload para API
+    const payload = {
+      id_classroom: parseInt(formData.id_classroom, 10),
+      id_subject_user: subjectUserId,
+      day_of_week: DAY_TO_EN[formData.diaSemana] || formData.diaSemana,
+      start_time: `${formData.horaInicio}:00`,
+      end_time: `${formData.horaFin}:00`,
+      shift: formData.turno,
+    };
+    payload.id_workshop_group = parseInt(formData.id_workshop_group, 10);
+
+    try {
+      const created = await schedulesService.createSchedule(payload);
+      // Notificar al padre para refrescar
+      onSave(created);
+      handleClose();
+    } catch (err) {
+      console.error(err);
+      const msg = err?.response?.data?.message || 'Error al crear el horario';
+      alert(msg);
+    }
   };
 
   const handleClose = () => {
     setFormData({
-      aula: "",
-      materia: "",
-      grupoTaller: "",
-      profesor: "",
+      id_classroom: "",
+      id_workshop_group: "",
       diaSemana: "",
       turno: "",
       horaInicio: "",
-      horaFin: ""
+      horaFin: "",
     });
+    setSelectedTeacherId("");
+    setSelectedSubjectId("");
     onClose();
   };
 
@@ -103,38 +162,48 @@ export default function AddScheduleModal({ isOpen, onClose, onSave }) {
           <div className="form-grid">
             {/* Aula */}
             <div className="form-group">
-              <label className="form-label">
-                <FiMapPin className="label-icon" />
-                Aula
-              </label>
+              <label className="form-label">Aula</label>
               <select
-                value={formData.aula}
-                onChange={(e) => handleInputChange('aula', e.target.value)}
+                value={formData.id_classroom}
+                onChange={(e) => handleInputChange('id_classroom', e.target.value)}
                 className="form-select"
                 required
               >
                 <option value="">Seleccionar aula</option>
-                {AULAS.map(aula => (
-                  <option key={aula} value={aula}>{aula}</option>
+                {classrooms.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Docente */}
+            <div className="form-group">
+              <label className="form-label">Docente</label>
+              <select
+                value={selectedTeacherId}
+                onChange={(e) => setSelectedTeacherId(e.target.value)}
+                className="form-select"
+                required
+              >
+                <option value="">Seleccionar docente</option>
+                {availableTeachers.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>
             </div>
 
             {/* Materia */}
             <div className="form-group">
-              <label className="form-label">
-                <FiBook className="label-icon" />
-                Materia
-              </label>
+              <label className="form-label">Materia</label>
               <select
-                value={formData.materia}
-                onChange={(e) => handleInputChange('materia', e.target.value)}
+                value={selectedSubjectId}
+                onChange={(e) => setSelectedSubjectId(e.target.value)}
                 className="form-select"
                 required
               >
                 <option value="">Seleccionar materia</option>
-                {MATERIAS.map(materia => (
-                  <option key={materia} value={materia}>{materia}</option>
+                {availableSubjects.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
             </div>
@@ -142,36 +211,19 @@ export default function AddScheduleModal({ isOpen, onClose, onSave }) {
             {/* Grupo de Taller */}
             <div className="form-group">
               <label className="form-label">
-                <FiUser className="label-icon" />
                 Grupo de Taller
               </label>
               <select
-                value={formData.grupoTaller}
-                onChange={(e) => handleInputChange('grupoTaller', e.target.value)}
+                value={formData.id_workshop_group}
+                onChange={(e) => handleInputChange('id_workshop_group', e.target.value)}
                 className="form-select"
                 required
               >
                 <option value="">Seleccionar grupo</option>
-                {GRUPOS.map(grupo => (
-                  <option key={grupo} value={grupo}>{grupo}</option>
+                {workshopGroups.map(g => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
               </select>
-            </div>
-
-            {/* Profesor */}
-            <div className="form-group">
-              <label className="form-label">
-                <FiUser className="label-icon" />
-                Profesor
-              </label>
-              <input
-                type="text"
-                value={formData.profesor}
-                onChange={(e) => handleInputChange('profesor', e.target.value)}
-                className="form-input"
-                placeholder="Nombre del profesor"
-                required
-              />
             </div>
 
             {/* Día de la Semana */}

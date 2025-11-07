@@ -16,6 +16,7 @@ import loansRoutes from './routes/loans.js';
 import rolesRoutes from './routes/roles.js';
 import schedulesRoutes from './routes/schedules.js';
 import dashboardRoutes from './routes/dashboard.js';
+import catalogsRoutes from './routes/catalogs.js';
 
 // Middlewares
 const app = express();
@@ -49,6 +50,7 @@ app.use('/api/loans', loansRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/schedules', schedulesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/catalogs', catalogsRoutes);
 
 // Testeo de api
 app.get('/api/test', async (req, res) => {

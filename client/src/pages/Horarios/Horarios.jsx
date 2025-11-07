@@ -2,22 +2,46 @@ import { useState, useEffect, useMemo } from "react";
 import { FiFilter, FiX, FiPlus, FiEdit, FiTrash2, FiChevronDown, FiClock, FiUser, FiBook, FiMapPin } from "react-icons/fi";
 import AddScheduleModal from "./AddScheduleModal";
 import "./style.css";
+import { schedulesService } from "../../shared/services/schedulesServices";
+import { catalogsService } from "../../shared/services/catalogsService";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
+// Etiquetas más amigables y horarios típicos (manteniendo valores exactos para filtrado backend)
 const TIME_SLOTS_MANANA = [
-  { label: "07:10 a 09:10", start: "07:10", end: "09:10" },
-  { label: "07:30 a 09:30", start: "07:30", end: "09:30" },
-  { label: "09:20 a 11:20", start: "09:20", end: "11:20" },
-  { label: "09:40 a 11:40", start: "09:40", end: "11:40" },
+  { label: "7 a 9", start: "07:00", end: "09:00" },
+  { label: "9 a 10", start: "09:00", end: "10:00" },
+  { label: "10 a 12", start: "10:00", end: "12:00" },
 ];
 
 const TIME_SLOTS_TARDE = [
-  { label: "13:00 a 15:30", start: "13:00", end: "15:30" },
-  { label: "13:30 a 15:30", start: "13:30", end: "15:30" },
-  { label: "15:10 a 17:10", start: "15:10", end: "17:10" },
+  { label: "13 a 15:30", start: "13:00", end: "15:30" },
   { label: "15:30 a 17:30", start: "15:30", end: "17:30" },
 ];
+
+const EN_TO_ES = {
+  Monday: "Lunes",
+  Tuesday: "Martes",
+  Wednesday: "Miércoles",
+  Thursday: "Jueves",
+  Friday: "Viernes",
+  Saturday: "Sábado",
+  Sunday: "Domingo",
+};
+
+function mapBackendSchedule(s) {
+  return {
+    id: s.id_schedule,
+    aula: s.classroom || "",
+    materia: s.subject || "",
+    grupoTaller: s.workshop_group || "",
+    profesor: s.teacher || "",
+    diaSemana: EN_TO_ES[s.day_of_week] || s.day_of_week,
+    horaInicio: (s.start_time || "").slice(0, 5),
+    horaFin: (s.end_time || "").slice(0, 5),
+    turno: s.shift,
+  };
+}
 
 export default function Horarios() {
   const [schedules, setSchedules] = useState([]);
@@ -26,160 +50,145 @@ export default function Horarios() {
   const [selectedCurso, setSelectedCurso] = useState("all");
   const [selectedHorario, setSelectedHorario] = useState("all");
   const [viewMode, setViewMode] = useState("aulas");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [workshopGroups, setWorkshopGroups] = useState([]);
 
-  // Initialize with sample data
+  const clearFilters = () => {
+    setSelectedCurso("all");
+    setSelectedHorario("all");
+  };
+
+  const toHHMMSS = (hhmm) => {
+    if (!hhmm) return null;
+    const [h, m] = String(hhmm).split(":");
+    if (!h || !m) return null;
+    return `${h.padStart(2, "0")}:${m.padStart(2, "0")}:00`;
+  };
+
+  const fetchSchedules = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      // Construir filtros para el backend según selección
+      const params = {};
+      // Turno
+      if (selectedTurno) params.shift = selectedTurno;
+      // Curso/Taller (nombre de grupo). El backend acepta filtro por nombre (compatibilidad)
+      if (selectedCurso && selectedCurso !== "all") params.workshop_group = selectedCurso;
+      // Horario (rango exacto). El backend requiere HH:MM:SS.
+      if (selectedHorario && selectedHorario !== "all") {
+        const slot = timeSlots.find((t) => t.label === selectedHorario);
+        if (slot) {
+          params.start_time = toHHMMSS(slot.start);
+          params.end_time = toHHMMSS(slot.end);
+        }
+      }
+
+      const res = await schedulesService.getSchedules(params);
+      // schedulesService retorna el objeto { success, message, data }
+      const data = res?.data || [];
+      const mapped = Array.isArray(data) ? data.map(mapBackendSchedule) : [];
+      setSchedules(mapped);
+    } catch (err) {
+      console.error(err);
+      const msg = err?.response?.data?.message || 'Error al cargar horarios';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar todos los cursos/grupos desde catálogos
   useEffect(() => {
-    const sampleSchedules = [
-      // ========== MAÑANA - LUNES ==========
-      {
-        id: crypto.randomUUID(),
-        aula: "AULA 12",
-        materia: "LENGUAJES TECNOLOGICOS",
-        grupoTaller: "1.3",
-        profesor: "Prof. García",
-        diaSemana: "Lunes",
-        horaInicio: "07:10",
-        horaFin: "09:10",
-        turno: "Mañana",
-      },
-      {
-        id: crypto.randomUUID(),
-        aula: "AULA 4",
-        materia: "PROCEDIMIENTOS TECNICOS",
-        grupoTaller: "1.1",
-        profesor: "Prof. Martínez",
-        diaSemana: "Lunes",
-        horaInicio: "07:10",
-        horaFin: "09:10",
-        turno: "Mañana",
-      },
-      {
-        id: crypto.randomUUID(),
-        aula: "AULA 12",
-        materia: "LABORATORIO HARDWARE",
-        grupoTaller: "4.5",
-        profesor: "Prof. López",
-        diaSemana: "Lunes",
-        horaInicio: "07:10",
-        horaFin: "09:10",
-        turno: "Mañana",
-      },
-      {
-        id: crypto.randomUUID(),
-        aula: "AULA 7",
-        materia: "PROCEDIMIENTOS TECNICOS",
-        grupoTaller: "3.7",
-        profesor: "Prof. Fernández",
-        diaSemana: "Lunes",
-        horaInicio: "07:30",
-        horaFin: "09:30",
-        turno: "Mañana",
-      },
-      {
-        id: crypto.randomUUID(),
-        aula: "AULA 11",
-        materia: "LABORATORIO DE DISEÑO WEB",
-        grupoTaller: "5.5",
-        profesor: "Prof. Rodríguez",
-        diaSemana: "Lunes",
-        horaInicio: "07:30",
-        horaFin: "09:30",
-        turno: "Mañana",
-      },
-      {
-        id: crypto.randomUUID(),
-        aula: "AULA 8",
-        materia: "SISTEMAS TECNOLOGICOS IMRSC",
-        grupoTaller: "7.3",
-        profesor: "Prof. Sánchez",
-        diaSemana: "Lunes",
-        horaInicio: "09:20",
-        horaFin: "11:20",
-        turno: "Mañana",
-      },
-      // ========== MAÑANA - MARTES ==========
-      {
-        id: crypto.randomUUID(),
-        aula: "AULA 21",
-        materia: "LENGUAJES TECNOLOGICOS",
-        grupoTaller: "3.1",
-        profesor: "Prof. García",
-        diaSemana: "Martes",
-        horaInicio: "07:10",
-        horaFin: "09:10",
-        turno: "Mañana",
-      },
-      {
-        id: crypto.randomUUID(),
-        aula: "AULA 11",
-        materia: "LABORATORIO DE PROGRAMACION",
-        grupoTaller: "5.3",
-        profesor: "Prof. López",
-        diaSemana: "Martes",
-        horaInicio: "07:10",
-        horaFin: "09:10",
-        turno: "Mañana",
-      },
-      // ========== TARDE - LUNES ==========
-      {
-        id: crypto.randomUUID(),
-        aula: "TALLER GRANDE",
-        materia: "SISTEMAS TECNOLOGICOS",
-        grupoTaller: "1.4",
-        profesor: "Prof. García",
-        diaSemana: "Lunes",
-        horaInicio: "13:00",
-        horaFin: "15:30",
-        turno: "Tarde",
-      },
-      {
-        id: crypto.randomUUID(),
-        aula: "AULA 7",
-        materia: "SISTEMAS TECNOLOGICOS",
-        grupoTaller: "3.2",
-        profesor: "Prof. López",
-        diaSemana: "Lunes",
-        horaInicio: "13:00",
-        horaFin: "15:30",
-        turno: "Tarde",
-      },
-    ];
-    setSchedules(sampleSchedules);
+    const loadWorkshopGroups = async () => {
+      try {
+        const res = await catalogsService.getWorkshopGroups();
+        // catalogsService devuelve directamente el array de grupos (sin envolver)
+        setWorkshopGroups(Array.isArray(res) ? res : []);
+      } catch (err) {
+        console.error(err);
+        // No bloquea la página, pero mostramos mensaje
+        setError((prev) => prev || 'Error al cargar cursos/grupos');
+      }
+    };
+    loadWorkshopGroups();
   }, []);
 
+  useEffect(() => {
+    fetchSchedules();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTurno, selectedCurso, selectedHorario]);
+
   const cursos = useMemo(() => {
+    // Preferimos catálogos para mostrar todos los cursos
+    if (workshopGroups.length > 0) {
+      return workshopGroups.map((wg) => wg.name).sort();
+    }
+    // Fallback: derivar de los horarios cargados
     const uniqueCursos = new Set(schedules.map((s) => s.grupoTaller));
     return Array.from(uniqueCursos).sort();
-  }, [schedules]);
+  }, [workshopGroups, schedules]);
 
   const timeSlots = selectedTurno === "Mañana" ? TIME_SLOTS_MANANA : TIME_SLOTS_TARDE;
 
+  const toMin = (hhmm) => {
+    if (!hhmm) return null;
+    const [h, m] = hhmm.split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  const rangesOverlap = (aStart, aEnd, bStart, bEnd) => {
+    return aStart < bEnd && bStart < aEnd;
+  };
+
   const filteredSchedules = useMemo(() => {
+    // Aun si filtramos en backend, mantenemos este filtro en cliente para asegurar consistencia visual
     return schedules.filter((s) => {
       if (s.turno !== selectedTurno) return false;
       if (selectedCurso !== "all" && s.grupoTaller !== selectedCurso) return false;
       if (selectedHorario !== "all") {
         const timeSlot = timeSlots.find((t) => t.label === selectedHorario);
-        if (timeSlot && (s.horaInicio !== timeSlot.start || s.horaFin !== timeSlot.end)) return false;
+        if (timeSlot) {
+          const slotStart = toMin(timeSlot.start);
+          const slotEnd = toMin(timeSlot.end);
+          const schStart = toMin(s.horaInicio);
+          const schEnd = toMin(s.horaFin);
+          if (slotStart == null || slotEnd == null || schStart == null || schEnd == null) return false;
+          // Mostrar el horario si su rango se solapa con el del slot seleccionado
+          if (!rangesOverlap(schStart, schEnd, slotStart, slotEnd)) return false;
+        }
       }
       return true;
     });
   }, [schedules, selectedTurno, selectedCurso, selectedHorario, timeSlots]);
 
   const getSchedulesForSlot = (dia, timeSlot) => {
+    const slotStart = toMin(timeSlot.start);
+    const slotEnd = toMin(timeSlot.end);
     return filteredSchedules.filter((s) => {
       if (s.diaSemana !== dia || s.turno !== selectedTurno) return false;
-      return s.horaInicio === timeSlot.start && s.horaFin === timeSlot.end;
+      const schStart = toMin(s.horaInicio);
+      const schEnd = toMin(s.horaFin);
+      if (slotStart == null || slotEnd == null || schStart == null || schEnd == null) return false;
+      return rangesOverlap(schStart, schEnd, slotStart, slotEnd);
     });
   };
 
-  const handleAddSchedule = (newSchedule) => {
-    setSchedules(prev => [...prev, newSchedule]);
+  const handleAddSchedule = () => {
+    // Luego de crear, refrescamos desde backend con filtros vigentes
+    fetchSchedules();
   };
 
-  const handleDeleteSchedule = (scheduleId) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este horario?')) {
+  const handleDeleteSchedule = async (scheduleId) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este horario?')) return;
+    try {
+      await schedulesService.deleteSchedule(scheduleId);
       setSchedules(prev => prev.filter(schedule => schedule.id !== scheduleId));
+    } catch (err) {
+      console.error(err);
+      const msg = err?.response?.data?.message || 'Error al eliminar horario';
+      alert(msg);
     }
   };
 
@@ -351,9 +360,11 @@ export default function Horarios() {
           <h2 className="list-title">Lista de Horarios</h2>
         </div>
         <div className="schedule-list">
-          {filteredSchedules.length === 0 ? (
+          {loading ? (
+            <div className="no-schedules"><p>Cargando horarios...</p></div>
+          ) : filteredSchedules.length === 0 ? (
             <div className="no-schedules">
-              <p>No hay horarios que coincidan con los filtros</p>
+              <p>{error || 'No hay horarios que coincidan con los filtros'}</p>
               {hasActiveFilters && (
                 <button className="clear-filters-btn" onClick={clearFilters}>
                   Limpiar filtros
