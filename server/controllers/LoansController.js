@@ -7,7 +7,7 @@ class LoansController {
 
     // Crear nuevo préstamo
     createLoan = async (req, res) => {
-        const { id_inventory, quantity, applicant, observations_loan, id_authorizer, id_profesor_autorizante } = req.body;
+        const { id_inventory, quantity, applicant, observations_loan } = req.body;
         try {
             if (!id_inventory || !quantity) {
                 throw { status: 400, message: 'Faltan datos obligatorios: id_inventory, quantity' };
@@ -22,8 +22,7 @@ class LoansController {
                 id_inventory,
                 quantity,
                 applicant,
-                observations_loan,
-                id_authorizer: id_authorizer ?? id_profesor_autorizante ?? null
+                observations_loan
             });
 
             res.status(201).json({

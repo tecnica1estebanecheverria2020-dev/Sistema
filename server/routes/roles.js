@@ -14,6 +14,7 @@ router.get('/', requireAuth, rolesController.getAllRoles);
 router.get('/stats', requireAuth, rolesController.getRolesStats);
 router.get('/:id', requireAuth, rolesController.getRoleById);
 router.get('/:id/users', requireAuth, rolesController.getUsersByRole);
+router.get('/name/:name/users', requireAuth, rolesController.getUsersByRoleName);
 router.post('/', requireAuth, rolesController.createRole);
 router.put('/:id', requireAuth, rolesController.updateRole);
 router.delete('/:id', requireAuth, rolesController.deleteRole);

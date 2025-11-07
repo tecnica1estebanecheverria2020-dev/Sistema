@@ -56,7 +56,6 @@ INSERT INTO `inventory` (`id_inventory`, `name`, `code`, `category`, `amount`, `
 CREATE TABLE `loans` (
   `id_loan` int(11) NOT NULL,
   `id_user` int(11) NOT NULL,
-  `id_authorizer` int(11) DEFAULT NULL,
   `id_inventory` int(11) NOT NULL,
   `quantity` int(11) DEFAULT 1,
   `applicant` varchar(100) DEFAULT NULL,
@@ -201,7 +200,6 @@ ALTER TABLE `inventory`
 ALTER TABLE `loans`
   ADD PRIMARY KEY (`id_loan`),
   ADD KEY `id_user` (`id_user`),
-  ADD KEY `id_authorizer` (`id_authorizer`),
   ADD KEY `id_inventory` (`id_inventory`);
 
 --
@@ -290,7 +288,6 @@ ALTER TABLE `users`
 --
 ALTER TABLE `loans`
   ADD CONSTRAINT `loans_ibfk_1` FOREIGN KEY (`id_user`) REFERENCES `users` (`id_user`),
-  ADD CONSTRAINT `loans_ibfk_3` FOREIGN KEY (`id_authorizer`) REFERENCES `users` (`id_user`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `loans_ibfk_2` FOREIGN KEY (`id_inventory`) REFERENCES `inventory` (`id_inventory`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --

@@ -6,7 +6,7 @@ class LoansService {
     // Crear nuevo préstamo
     createLoan = async (loanData) => {
         try {
-            const { id_user, id_inventory, quantity, applicant, observations_loan, id_authorizer } = loanData;
+            const { id_user, id_inventory, quantity, applicant, observations_loan } = loanData;
             
             const [inventoryItems] = await this.conex.query(
                 'SELECT * FROM inventory WHERE id_inventory = ?',
@@ -24,8 +24,8 @@ class LoansService {
 
             // Crear el préstamo
             const [result] = await this.conex.query(
-                'INSERT INTO loans (id_user, id_authorizer, id_inventory, quantity, applicant, observations_loan) VALUES (?, ?, ?, ?, ?, ?)',
-                [id_user, id_authorizer ?? null, id_inventory, quantity, applicant ?? null, observations_loan ?? null]
+                'INSERT INTO loans (id_user, id_inventory, quantity, applicant, observations_loan) VALUES (?, ?, ?, ?, ?)',
+                [id_user, id_inventory, quantity, applicant ?? null, observations_loan ?? null]
             );
 
             await this.conex.query(
@@ -36,7 +36,6 @@ class LoansService {
             return {
                 id_loan: result.insertId,
                 id_user,
-                id_authorizer: id_authorizer ?? null,
                 id_inventory,
                 quantity,
                 applicant: applicant ?? null,
@@ -56,11 +55,9 @@ class LoansService {
             let query = `
                 SELECT l.*, 
                        u.name as user_name, u.email as user_email,
-                       au.name as authorizer_name,
                        i.name as item_name, i.code as item_code, i.category as item_category
                 FROM loans l
                 JOIN users u ON l.id_user = u.id_user
-                LEFT JOIN users au ON l.id_authorizer = au.id_user
                 JOIN inventory i ON l.id_inventory = i.id_inventory
                 WHERE 1=1
             `;
@@ -111,11 +108,9 @@ class LoansService {
             const [loans] = await this.conex.query(`
                 SELECT l.*, 
                        u.name as user_name, u.email as user_email,
-                       au.name as authorizer_name,
                        i.name as item_name, i.code as item_code, i.category as item_category
                 FROM loans l
                 JOIN users u ON l.id_user = u.id_user
-                LEFT JOIN users au ON l.id_authorizer = au.id_user
                 JOIN inventory i ON l.id_inventory = i.id_inventory
                 WHERE l.id_loan = ?
             `, [id]);

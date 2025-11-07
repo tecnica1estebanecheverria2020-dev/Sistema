@@ -127,6 +127,24 @@ class RolesService {
         }
     };
 
+    // Obtener usuarios por nombre de rol usando la tabla users_roles
+    getUsersByRoleName = async (roleName) => {
+        try {
+            const [users] = await this.conex.query(`
+                SELECT u.id_user, u.name, u.email, u.active, r.name as role_name
+                FROM users u
+                JOIN users_roles ur ON u.id_user = ur.id_user
+                JOIN roles r ON ur.id_role = r.id_role
+                WHERE LOWER(r.name) = LOWER(?)
+                ORDER BY u.name ASC
+            `, [roleName]);
+
+            return users;
+        } catch (error) {
+            throw { status: 500, message: 'Error al obtener los usuarios por nombre de rol', cause: error };
+        }
+    };
+
     // Obtener estadísticas de roles
     getRolesStats = async () => {
         try {

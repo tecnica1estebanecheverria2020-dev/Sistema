@@ -165,6 +165,30 @@ class RolesController {
         }
     };
 
+    // Obtener usuarios por nombre de rol
+    getUsersByRoleName = async (req, res) => {
+        try {
+            const { name } = req.params;
+
+            if (!name || name.trim() === '') {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Nombre de rol inválido' 
+                });
+            }
+
+            const users = await this.rolesService.getUsersByRoleName(name);
+
+            res.status(200).json({
+                success: true,
+                message: 'Usuarios del rol obtenidos exitosamente',
+                data: users
+            });
+        } catch (error) {
+            handleError(res, error);
+        }
+    };
+
     // Obtener estadísticas de roles
     getRolesStats = async (req, res) => {
         try {
