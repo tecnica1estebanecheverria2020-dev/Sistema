@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { FiFilter, FiX, FiPlus, FiEdit, FiTrash2, FiChevronDown, FiClock, FiUser, FiBook, FiMapPin } from "react-icons/fi";
 import AddScheduleModal from "./AddScheduleModal";
+import EditScheduleModal from "./EditScheduleModal";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import "./style.css";
 import { schedulesService } from "../../shared/services/schedulesServices";
 import { catalogsService } from "../../shared/services/catalogsService";
@@ -29,9 +31,22 @@ const EN_TO_ES = {
   Sunday: "Domingo",
 };
 
+const ES_TO_EN = {
+  Lunes: "Monday",
+  Martes: "Tuesday",
+  Miércoles: "Wednesday",
+  Jueves: "Thursday",
+  Viernes: "Friday",
+  Sábado: "Saturday",
+  Domingo: "Sunday",
+};
+
 function mapBackendSchedule(s) {
   return {
     id: s.id_schedule,
+    idClassroom: s.id_classroom,
+    idWorkshopGroup: s.id_workshop_group,
+    idSubjectUser: s.id_subject_user,
     aula: s.classroom || "",
     materia: s.subject || "",
     grupoTaller: s.workshop_group || "",
@@ -53,6 +68,10 @@ export default function Horarios() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [workshopGroups, setWorkshopGroups] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [scheduleToEdit, setScheduleToEdit] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [scheduleToDelete, setScheduleToDelete] = useState(null);
 
   const clearFilters = () => {
     setSelectedCurso("all");
@@ -181,7 +200,6 @@ export default function Horarios() {
   };
 
   const handleDeleteSchedule = async (scheduleId) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este horario?')) return;
     try {
       await schedulesService.deleteSchedule(scheduleId);
       setSchedules(prev => prev.filter(schedule => schedule.id !== scheduleId));
@@ -330,26 +348,28 @@ export default function Horarios() {
             ))}
 
             {/* Time slots */}
-            {timeSlots.map((timeSlot) => (
-              <div key={timeSlot.label} className="time-row">
-                <div className="time-slot">{timeSlot.label}</div>
-                {DIAS.map((dia) => {
-                  const schedulesForSlot = getSchedulesForSlot(dia, timeSlot);
-                  return (
-                    <div key={`${dia}-${timeSlot.label}`} className="schedule-cell">
-                      {schedulesForSlot.map((schedule) => (
-                        <div key={schedule.id} className="schedule-item">
-                          <div className="schedule-aula">{schedule.aula}</div>
-                          <div className="schedule-materia">{schedule.materia}</div>
-                          <div className="schedule-grupo">{schedule.grupoTaller}</div>
-                          <div className="schedule-profesor">{schedule.profesor}</div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                    {timeSlots.map((timeSlot) => (
+                      <div key={timeSlot.label} className="time-row">
+                        <div className="time-slot">{timeSlot.label}</div>
+                        {DIAS.map((dia) => {
+                          const schedulesForSlot = getSchedulesForSlot(dia, timeSlot);
+                          return (
+                            <div key={`${dia}-${timeSlot.label}`} className="schedule-cell">
+                              {schedulesForSlot.map((schedule) => (
+                                <div key={schedule.id} className="schedule-item">
+                                  <div className="schedule-aula">{schedule.aula}</div>
+                                  <div className="schedule-materia">
+                                    <span className="materia-name">{schedule.materia}</span>
+                                    <span className="profesor-badge">{schedule.profesor}</span>
+                                  </div>
+                                  <div className="schedule-grupo">{schedule.grupoTaller}</div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
           </div>
         </div>
       </div>
@@ -379,11 +399,10 @@ export default function Horarios() {
                     <div className="schedule-badges">
                       <span className="aula-badge">{schedule.aula}</span>
                       <span className="materia-name">{schedule.materia}</span>
+                      <span className="profesor-badge">{schedule.profesor}</span>
                       <span className="grupo-badge">{schedule.grupoTaller}</span>
                     </div>
                     <div className="schedule-details">
-                      <span className="profesor-name">{schedule.profesor}</span>
-                      <span className="separator">•</span>
                       <span>{schedule.diaSemana}</span>
                       <span className="separator">•</span>
                       <span className="time-range">{schedule.horaInicio} - {schedule.horaFin}</span>
@@ -393,16 +412,21 @@ export default function Horarios() {
                   </div>
                 </div>
                 <div className="schedule-actions">
-                          <button className="action-btn edit-btn">
-                            <FiEdit />
-                          </button>
-                          <button 
-                            className="action-btn delete-btn"
-                            onClick={() => handleDeleteSchedule(schedule.id)}
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
+                  <button 
+                    className="action-btn edit-btn"
+                    onClick={() => { setScheduleToEdit(schedule); setShowEditModal(true); }}
+                    title="Editar horario"
+                  >
+                    <FiEdit />
+                  </button>
+                  <button 
+                    className="action-btn delete-btn"
+                    onClick={() => { setScheduleToDelete(schedule); setShowDeleteModal(true); }}
+                    title="Eliminar horario"
+                  >
+                    <FiTrash2 />
+                  </button>
+                </div>
               </div>
             ))
           )}
@@ -413,6 +437,25 @@ export default function Horarios() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSave={handleAddSchedule}
+      />
+
+      <EditScheduleModal
+        isOpen={showEditModal}
+        schedule={scheduleToEdit}
+        onClose={() => { setShowEditModal(false); setScheduleToEdit(null); }}
+        onSaved={() => { setShowEditModal(false); setScheduleToEdit(null); fetchSchedules(); }}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={showDeleteModal}
+        schedule={scheduleToDelete}
+        onCancel={() => { setShowDeleteModal(false); setScheduleToDelete(null); }}
+        onConfirm={() => {
+          if (!scheduleToDelete) return;
+          handleDeleteSchedule(scheduleToDelete.id);
+          setShowDeleteModal(false);
+          setScheduleToDelete(null);
+        }}
       />
     </div>
   );

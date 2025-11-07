@@ -439,6 +439,15 @@
   color: #1e293b;
 }
 
+.profesor-badge {
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .grupo-badge {
   background: #f1f5f9;
   color: #374151;
@@ -535,6 +544,17 @@
   padding: 1rem;
 }
 
+.modal {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 720px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
 .modal-container {
   background: white;
   border-radius: 16px;
@@ -569,6 +589,11 @@
   font-size: 0.9rem;
 }
 
+.modal-icon {
+  font-size: 1.25rem;
+  color: #374151;
+}
+
 .modal-close-btn {
   position: absolute;
   top: 1.5rem;
@@ -596,6 +621,20 @@
 
 .modal-form {
   padding: 2rem;
+}
+
+.modal-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
 }
 
 .form-grid {
@@ -684,6 +723,60 @@
   transition: all 0.2s ease;
   border: none;
   min-width: 120px;
+}
+
+/* Generic button helpers for modals */
+.btn {
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn.cancel {
+  background: #f7fafc;
+  color: #718096;
+  border: 2px solid #e2e8f0;
+}
+
+.btn.cancel:hover {
+  background: #edf2f7;
+  color: #4a5568;
+  transform: translateY(-1px);
+}
+
+.btn.primary {
+  background: #2563eb;
+  color: white;
+}
+
+.btn.primary:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+}
+
+.btn.danger {
+  background: #dc2626;
+  color: white;
+}
+
+.btn.danger:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.25);
+}
+
+.modal-summary {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  color: #374151;
 }
 
 .cancel-btn {
