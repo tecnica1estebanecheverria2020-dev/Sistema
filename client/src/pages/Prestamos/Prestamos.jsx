@@ -2,19 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { 
   FiPlus, 
   FiSearch, 
-  FiEye, 
   FiRotateCcw, 
   FiX,
   FiUser,
   FiBook,
-  FiCalendar,
-  FiClock,
   FiCamera,
-  FiChevronDown
+  FiChevronDown,
+  FiTrash,
+  FiMinus
 } from 'react-icons/fi';
 import './style.css';
+import { loansService } from '../../shared/services/loansService';
+import { rolesService } from '../../shared/services/rolesService';
+import { inventarioService } from '../../shared/services/inventarioService';
+import useNotification from '../../shared/hooks/useNotification';
+import LoanModal from './LoanModal';
 
 export default function Prestamos() {
+  const { notify } = useNotification();
   const [loans, setLoans] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -25,42 +30,153 @@ export default function Prestamos() {
     observaciones: ''
   });
   const [requestedItems, setRequestedItems] = useState([]);
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [selectedLoan, setSelectedLoan] = useState(null);
+  const [returnObservations, setReturnObservations] = useState('');
 
-  // Datos de ejemplo para préstamos
+  const [professors, setProfessors] = useState([]);
+
+  const [loadingProfessors, setLoadingProfessors] = useState(false);
+
+  const [inventoryByCode, setInventoryByCode] = useState({});
+
+  const [scannerEnabled] = useState(true);
+  const [barcodeBuffer, setBarcodeBuffer] = useState('');
+  const [lastKeyTime, setLastKeyTime] = useState(0);
+
+  // Utilidad: mapear préstamos del backend a la UI
+  const mapLoans = (data = []) => {
+    return (data || []).map((l) => ({
+      id: l.id_loan,
+      item: l.item_name,
+      cantidad: l.quantity,
+      solicitante: l.applicant || '-',
+      profesor: l.authorizer_name || l.user_name || '-',
+      fechaPrestamo: l.date_loan ? new Date(l.date_loan).toLocaleString() : '-',
+      fechaDevolucion: l.date_return ? new Date(l.date_return).toLocaleString() : null,
+      estado: l.state === 'devuelto' ? 'Devuelto' : 'Activo',
+      observacionesDevolucion: l.observations_return || ''
+    }));
+  };
+
+  // Cargar/Refrescar préstamos desde el servidor
+  const fetchLoans = async () => {
+    try {
+      const resp = await loansService.getLoans();
+      setLoans(mapLoans(resp?.loans));
+    } catch (error) {
+      notify(error?.message || 'Error al cargar préstamos', 'error');
+    }
+  };
+
+  // Cargar préstamos al montar
   useEffect(() => {
-    setLoans([
-      {
-        id: 1,
-        item: 'Notebook HP ProBook',
-        cantidad: 1,
-        solicitante: 'María Martínez',
-        profesor: 'Prof. García',
-        fechaHora: '2023-10-28 08:30',
-        estado: 'Activo',
-        acciones: 'Devolver'
-      },
-      {
-        id: 2,
-        item: 'Proyector Epson',
-        cantidad: 2,
-        solicitante: 'Carlos García',
-        profesor: 'Prof. Rodríguez',
-        fechaHora: '2023-10-28 09:15',
-        estado: 'Activo',
-        acciones: 'Devolver'
-      },
-      {
-        id: 3,
-        item: 'Alargue 5m',
-        cantidad: 3,
-        solicitante: 'Ana López',
-        profesor: 'Prof. Fernández',
-        fechaHora: '2023-10-28 10:00',
-        estado: 'Activo',
-        acciones: 'Devolver'
-      }
-    ]);
+    fetchLoans();
+    const onFocus = () => fetchLoans();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, []);
+
+  // Cargar profesores (usuarios con rol Profesor)
+  useEffect(() => {
+    const loadProfessors = async () => {
+      try {
+        setLoadingProfessors(true);
+        const rolesResp = await rolesService.getRoles();
+        const roles = rolesResp?.data || [];
+        const profesorRole = roles.find(r => (r.name || '').toLowerCase() === 'profesor');
+        if (!profesorRole) {
+          setProfessors([]);
+          return;
+        }
+        const usersResp = await rolesService.getUsersByRole(profesorRole.id_role);
+        const users = usersResp?.data || [];
+        setProfessors(users.map(u => ({ value: u.id_user, label: u.name })));
+      } catch (error) {
+        notify(error?.message || 'Error al cargar profesores', 'error');
+      } finally {
+        setLoadingProfessors(false);
+      }
+    };
+    loadProfessors();
+  }, []);
+
+  // Cargar inventario y construir índice por código
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        const invResp = await inventarioService.getItems();
+        const items = invResp?.data || invResp || [];
+        const index = {};
+        items.forEach(item => {
+          if (item.code) index[item.code] = item;
+        });
+        setInventoryByCode(index);
+      } catch (error) {
+        notify(error?.message || 'Error al cargar inventario', 'error');
+      }
+    };
+    loadInventory();
+  }, []);
+
+  // Detección de escáner de código de barras (HID teclado)
+  useEffect(() => {
+    if (!scannerEnabled) return;
+    const thresholdMs = 300; 
+    const handler = (e) => {
+      const now = Date.now();
+      if (!lastKeyTime) setLastKeyTime(now);
+      // Capturar caracteres imprimibles y Enter
+      if (e.key === 'Enter') {
+        const duration = now - lastKeyTime;
+        const code = barcodeBuffer.trim();
+        setBarcodeBuffer('');
+        setLastKeyTime(0);
+        // Si fue rápido, asumimos escáner
+        if (code && duration <= thresholdMs) {
+          onScanCode(code);
+        }
+      } else if (e.key.length === 1) {
+        setBarcodeBuffer(prev => prev + e.key);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [scannerEnabled, barcodeBuffer, lastKeyTime]);
+
+  const onScanCode = (code) => {
+    const item = inventoryByCode[code];
+    if (!item) {
+      notify(`Código ${code} no encontrado en inventario`, 'warn');
+      return;
+    }
+    // Agregar automáticamente al listado o incrementar la cantidad si ya existe
+    setRequestedItems(prev => {
+      const idx = prev.findIndex(p => p.id_inventory === item.id_inventory);
+      if (idx >= 0) {
+        const existing = prev[idx];
+        const max = item.available ?? existing.available ?? 1;
+        const updated = [...prev];
+        updated[idx] = {
+          ...existing,
+          // suma 1 pero no superes el disponible
+          quantity: Math.min(existing.quantity + 1, max),
+          available: max
+        };
+        return updated;
+      }
+      return [
+        ...prev,
+        {
+          id_inventory: item.id_inventory,
+          name: item.name,
+          quantity: 1,
+          available: item.available ?? 1,
+        }
+      ];
+    });
+    notify('Producto agregado al pedido', 'success');
+  };
 
   const CustomSelect = ({ value, onChange, options, placeholder, className = '' }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -106,11 +222,60 @@ export default function Prestamos() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Aquí iría la lógica para crear el préstamo
-    console.log('Datos del préstamo:', formData);
-    console.log('Items solicitados:', requestedItems);
-    setIsModalOpen(false);
-    resetForm();
+    // Crear un préstamo por cada ítem solicitado
+    const run = async () => {
+      try {
+        if (!formData.profesorAutorizante) {
+          notify('Selecciona el profesor autorizante', 'warn');
+          return;
+        }
+        if (!formData.solicitante) {
+          notify('Completa el nombre del solicitante', 'warn');
+          return;
+        }
+        if (requestedItems.length === 0) {
+          notify('Agrega al menos un ítem al pedido', 'warn');
+          return;
+        }
+        // Cerrar el modal inmediatamente como en Inventario
+        setIsModalOpen(false);
+        // Optimista: reflejar inmediatamente en la UI
+        const optimistics = requestedItems.map(req => ({
+          id: `temp-${Date.now()}-${req.id_inventory}`,
+          item: req.name,
+          cantidad: req.quantity,
+          solicitante: formData.solicitante || '-',
+          profesor: getProfessorNameById(formData.profesorAutorizante) || '-',
+          fechaPrestamo: new Date().toLocaleString(),
+          fechaDevolucion: null,
+          estado: 'Activo',
+          observacionesDevolucion: ''
+        }));
+        setLoans(prev => [...optimistics, ...prev]);
+
+        // Registrar préstamos en el servidor
+        for (const req of requestedItems) {
+          await loansService.createLoan({
+            id_inventory: req.id_inventory,
+            quantity: req.quantity,
+            applicant: formData.solicitante,
+            observations_loan: `Autorizado por: ${getProfessorNameById(formData.profesorAutorizante)}${formData.observaciones ? ' | ' + formData.observaciones : ''}`,
+            id_authorizer: formData.profesorAutorizante,
+          });
+        }
+        notify('Préstamo(s) registrado(s) correctamente', 'success');
+        resetForm();
+        // Reconciliar con datos reales del servidor
+        await fetchLoans();
+      } catch (error) {
+        notify(error?.message || 'Error al registrar el préstamo', 'error');
+      } finally {
+        // Asegurar cierre y limpieza incluso si hubo fallo
+        setIsModalOpen(false);
+        resetForm();
+      }
+    };
+    run();
   };
 
   const resetForm = () => {
@@ -120,6 +285,11 @@ export default function Prestamos() {
       observaciones: ''
     });
     setRequestedItems([]);
+  };
+
+  const getProfessorNameById = (id) => {
+    const prof = professors.find(p => p.value === id);
+    return prof ? prof.label : '-';
   };
 
   const filteredLoans = loans.filter(loan => {
@@ -132,6 +302,8 @@ export default function Prestamos() {
     
     return matchesSearch && matchesStatus;
   });
+
+  const mode = statusFilter === 'Activo' ? 'activos' : (statusFilter === 'Devuelto' ? 'devueltos' : 'todos');
 
   const getStatusClass = (estado) => {
     switch (estado.toLowerCase()) {
@@ -170,24 +342,33 @@ export default function Prestamos() {
 
       {/* Stats Cards */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-content">
-            <div className="stat-number">6</div>
-            <div className="stat-label">Total Préstamos</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-content">
-            <div className="stat-number">3</div>
-            <div className="stat-label">Activos</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-content">
-            <div className="stat-number">3</div>
-            <div className="stat-label">Devueltos</div>
-          </div>
-        </div>
+        {(() => {
+          const total = loans.length;
+          const activos = loans.filter(l => l.estado === 'Activo').length;
+          const devueltos = loans.filter(l => l.estado === 'Devuelto').length;
+          return (
+            <>
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-number">{total}</div>
+                  <div className="stat-label">Total Préstamos</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-number">{activos}</div>
+                  <div className="stat-label">Activos</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-content">
+                  <div className="stat-number">{devueltos}</div>
+                  <div className="stat-label">Devueltos</div>
+                </div>
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       {/* Filters */}
@@ -229,19 +410,26 @@ export default function Prestamos() {
 
       {/* Loans Table */}
       <div className="loans-table-container">
-        <div className="table-header">
+        <div className={`table-header header-${mode}`}>
           <div className="table-cell">Ítem</div>
           <div className="table-cell">Cantidad</div>
           <div className="table-cell">Solicitante</div>
           <div className="table-cell">Profesor</div>
-          <div className="table-cell">Fecha/Hora</div>
+          {mode === 'activos' && (<div className="table-cell">Fecha Préstamo</div>)}
+          {mode === 'devueltos' && (
+            <>
+              <div className="table-cell">Fecha Préstamo</div>
+              <div className="table-cell">Fecha Devolución</div>
+            </>
+          )}
+          {mode === 'todos' && (<div className="table-cell">Fecha</div>)}
           <div className="table-cell">Estado</div>
-          <div className="table-cell">Acciones</div>
+          {mode === 'activos' && (<div className="table-cell">Acciones</div>)}
         </div>
         
         <div className="table-body">
           {filteredLoans.map((loan) => (
-            <div key={loan.id} className="table-row">
+            <div key={loan.id} className={`table-row row-${mode}`}>
               <div className="table-cell">
                 <span className="item-name">{loan.item}</span>
               </div>
@@ -254,175 +442,104 @@ export default function Prestamos() {
               <div className="table-cell">
                 <span className="professor">{loan.profesor}</span>
               </div>
-              <div className="table-cell">
-                <span className="date-time">{loan.fechaHora}</span>
-              </div>
+              {mode === 'activos' && (
+                <div className="table-cell">
+                  <span className="date-time">{loan.fechaPrestamo}</span>
+                </div>
+              )}
+              {mode === 'devueltos' && (
+                <>
+                  <div className="table-cell">
+                    <span className="date-time">{loan.fechaPrestamo}</span>
+                  </div>
+                  <div className="table-cell">
+                    <span className="date-time">{loan.fechaDevolucion || '-'}</span>
+                  </div>
+                </>
+              )}
+              {mode === 'todos' && (
+                <div className="table-cell">
+                  <span className="date-time">{loan.estado === 'Devuelto' ? (loan.fechaDevolucion || '-') : (loan.fechaPrestamo || '-')}</span>
+                </div>
+              )}
               <div className="table-cell">
                 <span className={`status-badge ${getStatusClass(loan.estado)}`}>
                   {loan.estado}
                 </span>
               </div>
-              <div className="table-cell">
-                <div className="action-buttons">
-                  <button className="action-btn return-btn" title="Devolver">
-                    <FiRotateCcw />
-                  </button>
+              {mode === 'activos' && (
+                <div className="table-cell">
+                  <div className="action-buttons">
+                    <button
+                      className="action-btn return-btn"
+                      title="Registrar devolución"
+                      onClick={() => {
+                        setSelectedLoan(loan);
+                        setReturnObservations(loan.observacionesDevolucion || '');
+                        setIsReturnModalOpen(true);
+                      }}
+                    >
+                      <FiRotateCcw />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-header">
-              <div className="modal-header-content">
-                <div className="modal-icon">
-                  <FiPlus />
-                </div>
-                <div className="modal-title-section">
-                  <h2 className="modal-title">Registrar Préstamo</h2>
-                  <p className="modal-subtitle">Escanea los ítems con código QR y completa los datos del préstamo</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="modal-close"
-              >
-                <FiX />
-              </button>
-            </div>
+      {/* Modal de nuevo préstamo (LoanModal unificado) */}
+      <LoanModal
+        type="new"
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        formData={formData}
+        setFormData={setFormData}
+        handleInputChange={handleInputChange}
+        professors={professors}
+        loadingProfessors={loadingProfessors}
+        requestedItems={requestedItems}
+        setRequestedItems={setRequestedItems}
+        onSubmit={handleSubmit}
+      />
 
-            <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-sections">
-                {/* Left Section - Form */}
-                <div className="form-section">
-                  <h3 className="section-title">
-                    <FiUser className="section-icon" />
-                    Información del Préstamo
-                  </h3>
-                  
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label className="form-label">Profesor Autorizante</label>
-                      <CustomSelect
-                        value={formData.profesorAutorizante}
-                        onChange={(value) => setFormData(prev => ({ ...prev, profesorAutorizante: value }))}
-                        options={[
-                          { value: 'prof-garcia', label: 'Prof. García' },
-                          { value: 'prof-rodriguez', label: 'Prof. Rodríguez' },
-                          { value: 'prof-fernandez', label: 'Prof. Fernández' }
-                        ]}
-                        placeholder="Selecciona un profesor"
-                        className="form-select"
-                      />
-                    </div>
+      {/* Modal de devolución (LoanModal unificado) */}
+      <LoanModal
+        type="return"
+        isOpen={isReturnModalOpen}
+        loan={selectedLoan}
+        returnObservations={returnObservations}
+        setReturnObservations={setReturnObservations}
+        onClose={() => setIsReturnModalOpen(false)}
+        onConfirmReturn={async () => {
+          try {
+            // Cerrar inmediatamente como en Inventario
+            setIsReturnModalOpen(false);
+            const closingLoan = selectedLoan; // snapshot para refrescar luego
+            setSelectedLoan(null);
+            const notes = returnObservations;
+            setReturnObservations('');
+            // Optimista: marcar devuelto inmediatamente
+            setLoans(prev => prev.map(l => l.id === closingLoan.id ? {
+              ...l,
+              estado: 'Devuelto',
+              fechaDevolucion: new Date().toLocaleString()
+            } : l));
 
-                    <div className="form-group">
-                      <label className="form-label">Solicitante</label>
-                      <input
-                        type="text"
-                        name="solicitante"
-                        value={formData.solicitante}
-                        onChange={handleInputChange}
-                        placeholder="Nombre del alumno o persona"
-                        className="form-input"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group full-width">
-                      <label className="form-label">Observaciones (opcional)</label>
-                      <textarea
-                        name="observaciones"
-                        value={formData.observaciones}
-                        onChange={handleInputChange}
-                        placeholder="Notas adicionales sobre el préstamo"
-                        className="form-textarea"
-                        rows="3"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Section - QR Scanner */}
-                <div className="qr-section">
-                  <h3 className="section-title">
-                    <FiCamera className="section-icon" />
-                    Ítems Solicitados
-                  </h3>
-                  
-                  <div className="qr-scanner">
-                    <div className="qr-icon">
-                      <div className="qr-squares">
-                        <div className="qr-square"></div>
-                        <div className="qr-square"></div>
-                        <div className="qr-square"></div>
-                        <div className="qr-square"></div>
-                      </div>
-                    </div>
-                    <h4 className="qr-title">Escanear Código QR</h4>
-                    <p className="qr-description">
-                      Acerca el código QR del equipo al escáner para agregarlo al préstamo
-                    </p>
-                    <button type="button" className="scan-button">
-                      <FiCamera />
-                      Activar Escáner
-                    </button>
-                    <p className="qr-note">
-                      Sin préstamos, será activado el escáner QR real
-                    </p>
-                  </div>
-
-                  <div className="requested-items">
-                    {requestedItems.length === 0 ? (
-                      <div className="no-items">
-                        <FiBook className="no-items-icon" />
-                        <p className="no-items-text">No hay ítems agregados</p>
-                        <p className="no-items-subtext">Escanea un código QR para comenzar</p>
-                      </div>
-                    ) : (
-                      <div className="items-list">
-                        {requestedItems.map((item, index) => (
-                          <div key={index} className="requested-item">
-                            <span className="item-name">{item.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => setRequestedItems(prev => prev.filter((_, i) => i !== index))}
-                              className="remove-item"
-                            >
-                              <FiX />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="cancel-button"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="submit-button"
-                >
-                  Registrar Préstamo
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            // Confirmar devolución en el servidor
+            await loansService.returnLoan(closingLoan.id, { observations_return: notes });
+            notify('Préstamo devuelto correctamente', 'success');
+            // Recargar lista desde el servidor para mantener consistencia
+            await fetchLoans();
+          } catch (error) {
+            notify(error?.message || 'Error al registrar la devolución', 'error');
+          } finally {
+            // Asegurar que el modal queda cerrado
+            setIsReturnModalOpen(false);
+          }
+        }}
+      />
     </div>
   );
 }

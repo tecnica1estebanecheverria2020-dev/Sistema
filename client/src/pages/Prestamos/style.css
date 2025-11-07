@@ -219,6 +219,16 @@
   letter-spacing: 0.05em;
 }
 
+/* Modos de tabla según filtro */
+.table-header.header-activos { grid-template-columns: 2fr 1fr 1.5fr 1.5fr 1.5fr 1fr 1fr; }
+.table-row.row-activos { grid-template-columns: 2fr 1fr 1.5fr 1.5fr 1.5fr 1fr 1fr; }
+
+.table-header.header-devueltos { grid-template-columns: 2fr 1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr; }
+.table-row.row-devueltos { grid-template-columns: 2fr 1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr; }
+
+.table-header.header-todos { grid-template-columns: 2fr 1fr 1.5fr 1.5fr 1.5fr 1fr; }
+.table-row.row-todos { grid-template-columns: 2fr 1fr 1.5fr 1.5fr 1.5fr 1fr; }
+
 .table-body {
   max-height: 400px;
   overflow-y: auto;
@@ -713,6 +723,21 @@
   color: #374151;
   font-size: 0.8rem;
 }
+
+/* Requested items - estilos movidos desde inline */
+.requested-item-info {
+  display: flex;
+  flex-direction: column;
+}
+.requested-item-info .item-name { font-weight: 600; }
+.requested-item-info .item-available { font-size: 0.9rem; color: #666; }
+.requested-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.qty-btn { padding: 4px 8px; }
+.qty-value { min-width: 24px; text-align: center; }
 
 .remove-item {
   background: rgba(239, 68, 68, 0.1);
