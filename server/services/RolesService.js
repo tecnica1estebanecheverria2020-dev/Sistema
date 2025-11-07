@@ -83,9 +83,9 @@ class RolesService {
     // Eliminar rol
     deleteRole = async (id) => {
         try {
-            // Verificar si el rol tiene usuarios asociados
+            // Verificar si el rol tiene usuarios asociados en la tabla puente users_roles
             const [users] = await this.conex.query(
-                'SELECT COUNT(*) as count FROM users WHERE id_role = ?',
+                'SELECT COUNT(*) as count FROM users_roles WHERE id_role = ?',
                 [id]
             );
 
@@ -109,14 +109,15 @@ class RolesService {
         }
     };
 
-    // Obtener usuarios por rol
+    // Obtener usuarios por rol usando la tabla users_roles
     getUsersByRole = async (roleId) => {
         try {
             const [users] = await this.conex.query(`
                 SELECT u.id_user, u.name, u.email, u.active, r.name as role_name
                 FROM users u
-                JOIN roles r ON u.id_role = r.id_role
-                WHERE u.id_role = ?
+                JOIN users_roles ur ON u.id_user = ur.id_user
+                JOIN roles r ON ur.id_role = r.id_role
+                WHERE ur.id_role = ?
                 ORDER BY u.name ASC
             `, [roleId]);
 
