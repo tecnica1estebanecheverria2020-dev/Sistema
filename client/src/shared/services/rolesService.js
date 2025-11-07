@@ -16,6 +16,11 @@ export const rolesService = {
     return response.data;
   },
 
+  getUsersByRoleName: async (name) => {
+    const response = await axios.get(`/roles/name/${encodeURIComponent(name)}/users`);
+    return response.data;
+  },
+
   getRolesStats: async () => {
     const response = await axios.get(`/roles/stats`);
     return response.data;

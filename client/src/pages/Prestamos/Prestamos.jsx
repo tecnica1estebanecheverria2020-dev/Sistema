@@ -40,7 +40,7 @@ export default function Prestamos() {
 
   const [inventoryByCode, setInventoryByCode] = useState({});
 
-  const [scannerEnabled] = useState(true);
+  const [scannerEnabled, setScannerEnabled] = useState(true);
   const [barcodeBuffer, setBarcodeBuffer] = useState('');
   const [lastKeyTime, setLastKeyTime] = useState(0);
 
@@ -51,7 +51,7 @@ export default function Prestamos() {
       item: l.item_name,
       cantidad: l.quantity,
       solicitante: l.applicant || '-',
-      profesor: l.authorizer_name || l.user_name || '-',
+      profesor: l.user_name || '-',
       fechaPrestamo: l.date_loan ? new Date(l.date_loan).toLocaleString() : '-',
       fechaDevolucion: l.date_return ? new Date(l.date_return).toLocaleString() : null,
       estado: l.state === 'devuelto' ? 'Devuelto' : 'Activo',
@@ -77,19 +77,12 @@ export default function Prestamos() {
     return () => window.removeEventListener('focus', onFocus);
   }, []);
 
-  // Cargar profesores (usuarios con rol Profesor)
+  // Cargar profesores (usuarios con rol Profesor) directamente por nombre de rol
   useEffect(() => {
     const loadProfessors = async () => {
       try {
         setLoadingProfessors(true);
-        const rolesResp = await rolesService.getRoles();
-        const roles = rolesResp?.data || [];
-        const profesorRole = roles.find(r => (r.name || '').toLowerCase() === 'profesor');
-        if (!profesorRole) {
-          setProfessors([]);
-          return;
-        }
-        const usersResp = await rolesService.getUsersByRole(profesorRole.id_role);
+        const usersResp = await rolesService.getUsersByRoleName('profesor');
         const users = usersResp?.data || [];
         setProfessors(users.map(u => ({ value: u.id_user, label: u.name })));
       } catch (error) {
@@ -260,7 +253,6 @@ export default function Prestamos() {
             quantity: req.quantity,
             applicant: formData.solicitante,
             observations_loan: `Autorizado por: ${getProfessorNameById(formData.profesorAutorizante)}${formData.observaciones ? ' | ' + formData.observaciones : ''}`,
-            id_authorizer: formData.profesorAutorizante,
           });
         }
         notify('Préstamo(s) registrado(s) correctamente', 'success');
@@ -502,6 +494,9 @@ export default function Prestamos() {
         requestedItems={requestedItems}
         setRequestedItems={setRequestedItems}
         onSubmit={handleSubmit}
+        scannerEnabled={scannerEnabled}
+        setScannerEnabled={setScannerEnabled}
+        onScanCode={onScanCode}
       />
 
       {/* Modal de devolución (LoanModal unificado) */}

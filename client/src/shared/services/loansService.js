@@ -21,13 +21,12 @@ export const loansService = {
     return response.data;
   },
 
-  createLoan: async ({ id_inventory, quantity, applicant, observations_loan, id_authorizer }) => {
+  createLoan: async ({ id_inventory, quantity, applicant, observations_loan }) => {
     const response = await axios.post(`/loans`, {
       id_inventory,
       quantity,
       applicant,
       observations_loan,
-      id_authorizer,
     });
     return response.data;
   },

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   FiPlus,
   FiX,
@@ -27,7 +27,12 @@ export default function LoanModal(props) {
       requestedItems = [],
       setRequestedItems,
       onSubmit,
+      scannerEnabled = true,
+      setScannerEnabled = () => {},
+      onScanCode = () => {}
     } = props;
+
+    const [manualCode, setManualCode] = useState('');
 
     return (
       <div className="modal-overlay" onClick={onClose}>
@@ -112,16 +117,58 @@ export default function LoanModal(props) {
                     </div>
                   </div>
                   <h4 className="qr-title">Escanear Código QR</h4>
-                  <p className="qr-description">
-                    Acerca el código QR del equipo al escáner para agregarlo al préstamo
-                  </p>
-                  <div className={`scan-button active`}>
-                    <FiCamera />
-                    Escáner activo
-                  </div>
-                  <p className="qr-note">
-                    Si tienes un lector de barras USB, al escanear llenará automáticamente el código y se detectará.
-                  </p>
+                  {scannerEnabled ? (
+                    <>
+                      <p className="qr-description">
+                        Acerca el código QR del equipo al escáner para agregarlo al préstamo
+                      </p>
+                      <div
+                        className={`scan-button active`}
+                        onClick={() => setScannerEnabled(false)}
+                        title="Desactivar escáner"
+                      >
+                        <FiCamera />
+                        Escáner activo
+                      </div>
+                      <p className="qr-note">
+                        Si tienes un lector de barras USB, al escanear llenará automáticamente el código y se detectará.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className={`scan-button inactive`}
+                        onClick={() => setScannerEnabled(true)}
+                        title="Activar escáner"
+                      >
+                        <FiCamera />
+                        Escáner desactivado
+                      </div>
+                      <div className="manual-code" style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
+                        <input
+                          type="text"
+                          value={manualCode}
+                          onChange={(e) => setManualCode(e.target.value)}
+                          placeholder="Ingresar código manual"
+                          className="form-input"
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          className="action-btn"
+                          onClick={() => {
+                            const code = manualCode.trim();
+                            if (code) {
+                              onScanCode(code);
+                              setManualCode('');
+                            }
+                          }}
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="requested-items">
