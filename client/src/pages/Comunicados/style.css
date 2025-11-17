@@ -837,3 +837,302 @@
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   }
 }
+/* Crear Comunicado - Grid y plantillas */
+.comunicados-create-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.comunicados-template-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border: 1px solid #f0f0f0;
+  overflow: hidden;
+}
+.template-select-card { cursor: pointer; }
+.template-select-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: translateY(-2px); transition: all 0.2s ease; }
+
+.comunicados-template-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.comunicados-template-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2c3e50;
+}
+
+.comunicados-template-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.comunicados-template-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.comunicados-template-preview {
+  background: #fafafa;
+  border: 1px dashed #e5e5e5;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.comunicados-preview-canvas {
+  position: relative;
+  margin: 0 auto;
+  background: white;
+  border: 2px solid #ecf0f1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.comunicados-images-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+.comunicados-resize-handle {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #e9ecef;
+  border: 1px solid #ced4da;
+  cursor: nwse-resize;
+  z-index: 30;
+}
+
+.comunicados-resize-handle.active {
+  background: #e74c3c;
+  border-color: #c0392b;
+}
+
+.comunicados-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+.preview-bg-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.comunicados-canvas-text {
+  position: absolute;
+  z-index: 20;
+}
+
+.comunicados-image-manager {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.comunicados-manager-preview {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.comunicados-manager-preview img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border: 2px solid #ecf0f1;
+  border-radius: 6px;
+}
+
+.image-dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  border: 2px dashed #dee2e6;
+  border-radius: 6px;
+  background: #f8f9fa;
+  color: #5a6c7d;
+}
+
+.comunicados-canvas-drop-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(231, 76, 60, 0.08);
+  color: #c0392b;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.comunicados-icon-preview {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #f1f3f5;
+  border: 1px solid #dee2e6;
+}
+
+.comunicados-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.comunicados-inline {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.comunicados-error-text {
+  color: #e74c3c;
+  font-size: 0.85rem;
+}
+
+.comunicados-preview-icons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.comunicados-preview-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f3f5;
+  color: #2c3e50;
+}
+
+.comunicados-preview-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.comunicados-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  background: #eef2f7;
+  border-radius: 6px;
+  color: #1f2d3d;
+  text-decoration: none;
+}
+
+.comunicados-list-simple {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.comunicados-list-item {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.comunicados-contact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+
+.comunicados-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.comunicados-tag {
+  background: #f1f3f5;
+  color: #2c3e50;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+.create-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+}
+
+.create-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.create-card-icon {
+  font-size: 2rem;
+  color: #e74c3c;
+}
+
+.create-card-text {
+  font-size: 1rem;
+  color: #7f8c8d;
+}
+
+@media (max-width: 820px) {
+  .comunicados-template-body { grid-template-columns: 1fr; }
+}
+.volver-button {
+  background: transparent;
+  border: none;
+  color: #2c3e50;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.volver-button:hover { background: #f1f3f5; }
+
+.image-upload-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.image-dropzone {
+  border: 2px dashed #e5e5e5;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  color: #7f8c8d;
+  background: #fafafa;
+  cursor: pointer;
+}
+.image-preview-panel { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.image-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 0.5rem; }
+.image-size-slider { width: 160px; }
+.comunicados-icon-preview { width: 36px; height: 36px; border-radius: 50%; background: #f1f3f5; object-fit: cover; }
+.preview-bg-overlay { position: absolute; inset: 0; pointer-events: none; }
+.comunicados-template-preview { position: relative; }
+
+@media (max-width: 820px) {
+  .image-upload-container { grid-template-columns: 1fr; }
+}

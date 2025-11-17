@@ -6,9 +6,10 @@ import Stats from './components/Stats.jsx';
 import Filters from './components/Filters.jsx';
 import Card from './components/Card.jsx';
 import ViewModal from './components/ViewModal.jsx';
-import CreateModal from './components/CreateModal.jsx';
+import { useNavigate } from 'react-router-dom';
 
 export default function Comunicados() {
+  const navigate = useNavigate();
   const {
     comunicados,
     filteredComunicados,
@@ -16,23 +17,12 @@ export default function Comunicados() {
     setSearchTerm,
     filterType,
     setFilterType,
-    isCreateModalOpen,
-    setIsCreateModalOpen,
     isViewModalOpen,
     setIsViewModalOpen,
     selectedComunicado,
     expandedCards,
     toggleCardExpansion,
-    formData,
-    setFormData,
-    contentRef,
     openViewModal,
-    handleCreateSubmit,
-    openCreateModal,
-    applyFormat,
-    handleContentChange,
-    addImageToGallery,
-    removeImageFromGallery,
     stripHtml,
   } = useComunicados();
 
@@ -42,7 +32,7 @@ export default function Comunicados() {
 
   return (
     <div className="comunicados-container">
-      <Header onAdd={openCreateModal} />
+      <Header onAdd={() => navigate('/comunicados/crear')} />
       <Stats publishedCount={publishedCount} draftCount={draftCount} totalCount={totalCount} />
       <Filters
         searchTerm={searchTerm}
@@ -72,18 +62,7 @@ export default function Comunicados() {
         )}
       </div>
       <ViewModal isOpen={isViewModalOpen} comunicado={selectedComunicado} onClose={() => setIsViewModalOpen(false)} />
-      <CreateModal
-        isOpen={isCreateModalOpen}
-        formData={formData}
-        setFormData={setFormData}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateSubmit}
-        contentRef={contentRef}
-        applyFormat={applyFormat}
-        addImageToGallery={addImageToGallery}
-        removeImageFromGallery={removeImageFromGallery}
-        handleContentChange={handleContentChange}
-      />
+      
     </div>
   );
 }
