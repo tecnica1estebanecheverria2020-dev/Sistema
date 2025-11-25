@@ -29,7 +29,7 @@ export default function Sidebar() {
         { path: '/Horarios', icon: FiClock, label: 'Horarios', badge: null },
         { path: '/Comunicados', icon: FiMessageSquare, label: 'Comunicados', badge: null },
         { path: '/Usuarios', icon: FiUsers, label: 'Usuarios', badge: null },
-        { path: '/Configuracion', icon: FiSettings, label: 'Configuración', badge: null }
+        
     ];
 
     const toggleUserDropdown = () => {

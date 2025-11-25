@@ -1,28 +1,18 @@
 import axios from '../api/axios';
 
+/**
+ * rolesService
+ * Capa de acceso para Roles.
+ */
 export const rolesService = {
+  /** Obtener todos los roles */
   getRoles: async () => {
-    const response = await axios.get(`/roles`);
-    return response.data;
-  },
-
-  getRoleById: async (id) => {
-    const response = await axios.get(`/roles/${id}`);
-    return response.data;
-  },
-
-  getUsersByRole: async (id) => {
-    const response = await axios.get(`/roles/${id}/users`);
-    return response.data;
-  },
-
-  getUsersByRoleName: async (name) => {
-    const response = await axios.get(`/roles/name/${encodeURIComponent(name)}/users`);
-    return response.data;
-  },
-
-  getRolesStats: async () => {
-    const response = await axios.get(`/roles/stats`);
-    return response.data;
-  },
+    try {
+      const { data } = await axios.get('/roles');
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      throw new Error(err?.response?.data?.message || 'No se pudieron cargar los roles');
+    }
+  }
 };
+
