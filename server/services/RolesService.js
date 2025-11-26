@@ -165,6 +165,93 @@ class RolesService {
             throw { status: 500, message: 'Error al obtener las estadísticas de roles', cause: error };
         }
     };
+
+    // Obtener roles de un usuario usando tabla puente users_roles
+    getUserRoles = async (userId) => {
+        try {
+            const [[userExists]] = await this.conex.query('SELECT 1 as ok FROM users WHERE id_user = ?', [userId]);
+            if (!userExists) {
+                throw { status: 404, message: 'Usuario no encontrado' };
+            }
+            const [roles] = await this.conex.query(
+                `SELECT r.id_role, r.name
+                 FROM users_roles ur
+                 JOIN roles r ON ur.id_role = r.id_role
+                 WHERE ur.id_user = ?
+                 ORDER BY r.name ASC`,
+                [userId]
+            );
+            return roles;
+        } catch (error) {
+            if (error.status) throw error;
+            throw { status: 500, message: 'Error al obtener roles del usuario', cause: error };
+        }
+    };
+
+    // Asignar roles a un usuario: inserta los no existentes, ignora duplicados
+    assignRolesToUser = async (userId, roles) => {
+        const conn = this.conex;
+        try {
+            // Validar usuario
+            const [[userExists]] = await conn.query('SELECT 1 as ok FROM users WHERE id_user = ?', [userId]);
+            if (!userExists) throw { status: 404, message: 'Usuario no encontrado' };
+
+            // Normalizar ids
+            const roleIds = [...new Set(roles.map((r) => Number(r)).filter((n) => !isNaN(n)))];
+            if (roleIds.length === 0) throw { status: 400, message: 'Lista de roles inválida' };
+
+            // Validar roles existentes
+            const [existing] = await conn.query(
+                `SELECT id_role FROM roles WHERE id_role IN (${roleIds.map(() => '?').join(',')})`,
+                roleIds
+            );
+            const existingIds = existing.map((r) => Number(r.id_role));
+            if (existingIds.length === 0) throw { status: 400, message: 'Ninguno de los roles existe' };
+
+            // Insertar ignorando duplicados
+            if (existingIds.length > 0) {
+                const values = existingIds.map((id) => [userId, id]);
+                await conn.query(
+                    'INSERT IGNORE INTO users_roles (id_user, id_role) VALUES ' +
+                    values.map(() => '(?, ?)').join(','),
+                    values.flat()
+                );
+            }
+
+            return await this.getUserRoles(userId);
+        } catch (error) {
+            if (error.status) throw error;
+            throw { status: 500, message: 'Error al asignar roles al usuario', cause: error };
+        }
+    };
+
+    // Remover roles de un usuario: si lista vacía, remueve todos
+    removeRolesFromUser = async (userId, roles) => {
+        const conn = this.conex;
+        try {
+            const [[userExists]] = await conn.query('SELECT 1 as ok FROM users WHERE id_user = ?', [userId]);
+            if (!userExists) throw { status: 404, message: 'Usuario no encontrado' };
+
+            const roleIds = Array.isArray(roles)
+                ? [...new Set(roles.map((r) => Number(r)).filter((n) => !isNaN(n)))]
+                : [];
+
+            if (roleIds.length === 0) {
+                // Remover todos
+                await conn.query('DELETE FROM users_roles WHERE id_user = ?', [userId]);
+            } else {
+                await conn.query(
+                    `DELETE FROM users_roles WHERE id_user = ? AND id_role IN (${roleIds.map(() => '?').join(',')})`,
+                    [userId, ...roleIds]
+                );
+            }
+
+            return await this.getUserRoles(userId);
+        } catch (error) {
+            if (error.status) throw error;
+            throw { status: 500, message: 'Error al remover roles del usuario', cause: error };
+        }
+    };
 }
 
 export default RolesService;

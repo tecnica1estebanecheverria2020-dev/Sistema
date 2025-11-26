@@ -30,6 +30,30 @@
   transition: all 0.3s ease;
 }
 
+.sidebar-card-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.sidebar-card-role {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--sidebar-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-dropdown-title {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.5rem ;
+}
+
+
 /* Scrollbar personalizado para la navegación */
 .sidebar-nav::-webkit-scrollbar {
   width: 4px;

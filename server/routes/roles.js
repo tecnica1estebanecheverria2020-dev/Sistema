@@ -11,6 +11,10 @@ const rolesController = new RolesController(rolesService);
 
 // Rutas de roles
 router.get('/', requireAuth, rolesController.getAllRoles);
+// Gestión de roles por usuario (colocar antes de rutas con ':id' para evitar conflictos)
+router.get('/users/:userId/roles', requireAuth, rolesController.getUserRoles);
+router.post('/users/:userId/roles', requireAuth, rolesController.assignRolesToUser);
+router.delete('/users/:userId/roles', requireAuth, rolesController.removeRolesFromUser);
 router.get('/stats', requireAuth, rolesController.getRolesStats);
 router.get('/:id', requireAuth, rolesController.getRoleById);
 router.get('/:id/users', requireAuth, rolesController.getUsersByRole);

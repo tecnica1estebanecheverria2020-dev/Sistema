@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import './style.css';
 import useAuth from '../../hooks/useAuth.js';
+import usePermisos from '../../hooks/usePermisos.js';
 import { 
     FiHome, 
     FiPackage, 
@@ -19,18 +20,20 @@ import { FaBox } from 'react-icons/fa';
 
 export default function Sidebar() {
     const { user, handleLogout } = useAuth();
+    const { canAccessTo } = usePermisos();
     const location = useLocation();
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
     const menuItems = [
-        { path: '/', icon: FiHome, label: 'Dashboard', badge: null },
-        { path: '/Inventario', icon: FiPackage, label: 'Inventario', badge: null },
-        { path: '/Prestamos', icon: FiBook, label: 'Préstamos', badge: null },
-        { path: '/Horarios', icon: FiClock, label: 'Horarios', badge: null },
-        { path: '/Comunicados', icon: FiMessageSquare, label: 'Comunicados', badge: null },
-        { path: '/Usuarios', icon: FiUsers, label: 'Usuarios', badge: null },
-        
+        { path: '/', icon: FiHome, label: 'Dashboard', badge: null, permission: 'dashboard.view' },
+        { path: '/Inventario', icon: FiPackage, label: 'Inventario', badge: null, permission: 'inventario.view' },
+        { path: '/Prestamos', icon: FiBook, label: 'Préstamos', badge: null, permission: 'prestamos.view' },
+        { path: '/Horarios', icon: FiClock, label: 'Horarios', badge: null, permission: 'horarios.view' },
+        { path: '/Comunicados', icon: FiMessageSquare, label: 'Comunicados', badge: null, permission: 'comunicados.view' },
+        { path: '/Usuarios', icon: FiUsers, label: 'Usuarios', badge: null, permission: 'usuarios.view' },
     ];
+
+    const visibleMenuItems = menuItems.filter(item => canAccessTo(item.permission));
 
     const toggleUserDropdown = () => {
         setIsUserDropdownOpen(!isUserDropdownOpen);
@@ -56,7 +59,7 @@ export default function Sidebar() {
             {/* Navegación Principal */}
             <nav className="sidebar-nav">
                 <div className="sidebar-nav-section">
-                    {menuItems.map((item) => {
+                    {visibleMenuItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
                         
@@ -75,8 +78,12 @@ export default function Sidebar() {
                 </div>
             </nav>
 
-            {/* Acciones Rápidas */}
-            <div className="sidebar-actions">
+            {/* 
+                Acciones Rápidas 
+                
+                De momento no habran
+            */}
+            {/* <div className="sidebar-actions">
                 <h4 className="sidebar-actions-title">ACCIONES RÁPIDAS</h4>
                 <div className="sidebar-action-buttons">
                     <button className="sidebar-action-btn">
@@ -86,7 +93,7 @@ export default function Sidebar() {
                         <FiBell />
                     </button>
                 </div>
-            </div>
+            </div> */}
 
             {/* Footer del Sidebar - Usuario con Dropdown */}
             <div className="sidebar-footer">
@@ -111,6 +118,14 @@ export default function Sidebar() {
                                 <FiLogOut className="sidebar-dropdown-icon" />
                                 <span>Cerrar Sesión</span>
                             </button>
+                            <span className="sidebar-dropdown-title">Roles:</span>
+                            <div className="sidebar-card-roles">
+                                {user.roles.map((role) => (
+                                    <div key={role} className="sidebar-card-role">
+                                        {role.name}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>

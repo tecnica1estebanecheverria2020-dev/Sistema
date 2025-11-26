@@ -17,52 +17,58 @@ class UsersService {
     const query = `
       SELECT 
         u.id_user, u.email, u.name, u.active, u.tel, u.created_at,
-        GROUP_CONCAT(r.id_role) AS roles_ids,
-        GROUP_CONCAT(r.name) AS roles_names
+        r.id_role AS role_id, r.name AS role_name
       FROM users u
       LEFT JOIN users_roles ur ON u.id_user = ur.id_user
       LEFT JOIN roles r ON ur.id_role = r.id_role
-      GROUP BY u.id_user
-      ORDER BY u.created_at DESC
+      ORDER BY u.created_at DESC, u.id_user
     `;
     const [rows] = await pool.query(query);
-    return rows.map(r => ({
-      id_user: r.id_user,
-      email: r.email,
-      name: r.name,
-      active: r.active,
-      tel: r.tel,
-      created_at: r.created_at,
-      roles: r.roles_ids ? String(r.roles_ids).split(',').map(n => Number(n)) : [],
-      roles_names: r.roles_names ? String(r.roles_names).split(',') : [],
-    }));
+    const byUser = new Map();
+    for (const r of rows) {
+      if (!byUser.has(r.id_user)) {
+        byUser.set(r.id_user, {
+          id_user: r.id_user,
+          email: r.email,
+          name: r.name,
+          active: r.active,
+          tel: r.tel,
+          created_at: r.created_at,
+          roles: []
+        });
+      }
+      if (r.role_id) {
+        byUser.get(r.id_user).roles.push({ id_role: Number(r.role_id), name: r.role_name });
+      }
+    }
+    return Array.from(byUser.values());
   }
 
   async getById(id) {
     const query = `
       SELECT 
         u.id_user, u.email, u.name, u.active, u.tel, u.created_at,
-        GROUP_CONCAT(r.id_role) AS roles_ids,
-        GROUP_CONCAT(r.name) AS roles_names
+        r.id_role AS role_id, r.name AS role_name
       FROM users u
       LEFT JOIN users_roles ur ON u.id_user = ur.id_user
       LEFT JOIN roles r ON ur.id_role = r.id_role
       WHERE u.id_user = ?
-      GROUP BY u.id_user
     `;
     const [rows] = await pool.query(query, [id]);
-    const r = rows[0];
-    if (!r) return null;
-    return {
-      id_user: r.id_user,
-      email: r.email,
-      name: r.name,
-      active: r.active,
-      tel: r.tel,
-      created_at: r.created_at,
-      roles: r.roles_ids ? String(r.roles_ids).split(',').map(n => Number(n)) : [],
-      roles_names: r.roles_names ? String(r.roles_names).split(',') : [],
+    if (!rows || rows.length === 0) return null;
+    const base = {
+      id_user: rows[0].id_user,
+      email: rows[0].email,
+      name: rows[0].name,
+      active: rows[0].active,
+      tel: rows[0].tel,
+      created_at: rows[0].created_at,
+      roles: []
     };
+    for (const r of rows) {
+      if (r.role_id) base.roles.push({ id_role: Number(r.role_id), name: r.role_name });
+    }
+    return base;
   }
 
   async create({ name, email, password, tel, active = 1, roles = [] }) {
@@ -92,22 +98,21 @@ class UsersService {
       );
       const userId = result.insertId;
 
-      // Validar roles si se proporcionan
+      // Validar roles si se proporcionan (formato objetos)
       if (roles && roles.length > 0) {
-        const uniqueRoles = Array.from(new Set(roles.map(Number))).filter(Boolean);
-        if (uniqueRoles.length > 0) {
+        const roleIds = Array.from(new Set(roles.map(r => Number(r?.id_role)).filter(Boolean)));
+        if (roleIds.length > 0) {
           const [validRoles] = await pool.query(
-            `SELECT id_role FROM roles WHERE id_role IN (${uniqueRoles.map(() => '?').join(',')})`,
-            uniqueRoles
+            `SELECT id_role FROM roles WHERE id_role IN (${roleIds.map(() => '?').join(',')})`,
+            roleIds
           );
           const validIds = new Set(validRoles.map(r => r.id_role));
-          const invalid = uniqueRoles.filter(r => !validIds.has(r));
+          const invalid = roleIds.filter(r => !validIds.has(r));
           if (invalid.length > 0) {
             throw { status: 400, message: `Roles inválidos: ${invalid.join(',')}` };
           }
-          // Insertar relaciones
-          for (const r of uniqueRoles) {
-            await pool.query('INSERT INTO users_roles (id_user, id_role) VALUES (?, ?)', [userId, r]);
+          for (const rid of roleIds) {
+            await pool.query('INSERT INTO users_roles (id_user, id_role) VALUES (?, ?)', [userId, rid]);
           }
         }
       }
@@ -166,19 +171,18 @@ class UsersService {
       }
 
       if (data.roles !== undefined) {
-        const roles = Array.isArray(data.roles) ? data.roles.map(Number).filter(Boolean) : [];
-        // Reemplazar relaciones
+        const roleIds = Array.isArray(data.roles) ? Array.from(new Set(data.roles.map(r => Number(r?.id_role)).filter(Boolean))) : [];
         await pool.query('DELETE FROM users_roles WHERE id_user = ?', [id]);
-        if (roles.length > 0) {
+        if (roleIds.length > 0) {
           const [validRoles] = await pool.query(
-            `SELECT id_role FROM roles WHERE id_role IN (${roles.map(() => '?').join(',')})`,
-            roles
+            `SELECT id_role FROM roles WHERE id_role IN (${roleIds.map(() => '?').join(',')})`,
+            roleIds
           );
           const validIds = new Set(validRoles.map(r => r.id_role));
-          const invalid = roles.filter(r => !validIds.has(r));
+          const invalid = roleIds.filter(r => !validIds.has(r));
           if (invalid.length > 0) throw { status: 400, message: `Roles inválidos: ${invalid.join(',')}` };
-          for (const r of roles) {
-            await pool.query('INSERT INTO users_roles (id_user, id_role) VALUES (?, ?)', [id, r]);
+          for (const rid of roleIds) {
+            await pool.query('INSERT INTO users_roles (id_user, id_role) VALUES (?, ?)', [id, rid]);
           }
         }
       }

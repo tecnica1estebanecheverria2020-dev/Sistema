@@ -40,7 +40,6 @@ class UsersController {
         password,
         tel,
         active = 1,
-        id_role,
         roles,
       } = req.body || {};
 
@@ -57,7 +56,7 @@ class UsersController {
         password: String(password),
         tel: sanitizeTel(tel),
         active: Number(active) ? 1 : 0,
-        roles: Array.isArray(roles) ? roles : (id_role ? [id_role] : []),
+        roles: Array.isArray(roles) ? roles : [],
       };
 
       const newUser = await usersService.create(payload);
@@ -80,7 +79,6 @@ class UsersController {
         password,
         tel,
         active,
-        id_role,
         roles,
       } = req.body || {};
 
@@ -95,8 +93,8 @@ class UsersController {
       }
       if (tel !== undefined) data.tel = sanitizeTel(tel);
       if (active !== undefined) data.active = Number(active) ? 1 : 0;
-      if (roles !== undefined || id_role !== undefined) {
-        data.roles = Array.isArray(roles) ? roles : (id_role ? [id_role] : []);
+      if (roles !== undefined) {
+        data.roles = Array.isArray(roles) ? roles : [];
       }
 
       const updatedUser = await usersService.update(Number(id), data);
@@ -143,4 +141,3 @@ class UsersController {
 }
 
 export default new UsersController();
-

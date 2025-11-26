@@ -5,7 +5,7 @@ export default function useAuth() {
   const context = useContext(UserContext);
  
   if (!context) {
-    throw new Error('El hook useUser debe ser utilizado dentro de un <UserProvider>');
+    throw new Error('El hook useAuth debe ser utilizado dentro de un <UserProvider>');
   }
 
   return context;

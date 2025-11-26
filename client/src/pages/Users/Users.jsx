@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiUser, FiX, FiUsers } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiUsers } from 'react-icons/fi';
 import { useUsers } from '../../shared/hooks/useUsers';
-import { rolesService } from '../../shared/services/rolesService';
+import { useRoles } from '../../shared/hooks/useRoles';
+import ModalUser from './ModalUser';
 import './style.css';
 
 export default function Users() {
     const { users, loading, error, fetchUsers, createUser, updateUser, deleteUser, toggleUser, getUserById } = useUsers();
+    const { roles, rolesLoading, rolesError, fetchRoles } = useRoles();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [availableRoles, setAvailableRoles] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -24,20 +25,11 @@ export default function Users() {
     }, [fetchUsers]);
 
     useEffect(() => {
-        const loadRoles = async () => {
-            try {
-                const roles = await rolesService.getRoles();
-                setAvailableRoles(roles);
-            } catch (e) {
-                // En caso de error, dejamos la lista vacía. El error global del hook cubrirá feedback.
-                setAvailableRoles([]);
-            }
-        };
-        loadRoles();
-    }, []);
+        fetchRoles();
+    }, [fetchRoles]);
 
     const filteredUsers = users.filter(user => {
-        const rolesText = Array.isArray(user.roles_names) ? user.roles_names.join(', ') : '';
+        const rolesText = Array.isArray(user.roles) ? user.roles.map(r => r.name).join(', ') : '';
         return (
             String(user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             String(user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,8 +42,7 @@ export default function Users() {
         let ok = false;
         if (editingUser) {
             const payload = { ...formData };
-            // no enviar password vacía en actualización
-            if (!payload.password) delete payload.password;
+            if (!payload.password) delete payload.password; // no enviar password vacía
             ok = await updateUser(editingUser.id_user, payload);
         } else {
             const payload = { ...formData };
@@ -65,22 +56,16 @@ export default function Users() {
 
     const handleEdit = async (user) => {
         setEditingUser(user);
-        // Intentamos obtener el detalle con IDs de roles
-        let rolesIds = [];
+        let rolesObjs = [];
         try {
             const detail = await getUserById(user.id_user);
-            if (detail && Array.isArray(detail.roles_ids)) {
-                rolesIds = detail.roles_ids.map((r) => Number(r));
-            } else if (Array.isArray(user.roles_names) && availableRoles.length > 0) {
-                // Fallback: mapear por nombre si no hay roles_ids
-                const nameSet = new Set(user.roles_names);
-                rolesIds = availableRoles
-                    .filter((r) => nameSet.has(r.name))
-                    .map((r) => Number(r.id_role));
+            if (detail && Array.isArray(detail.roles)) {
+                rolesObjs = detail.roles;
+            } else if (Array.isArray(user.roles)) {
+                rolesObjs = user.roles;
             }
         } catch (_) {
-            // Si falla, dejamos roles vacío
-            rolesIds = [];
+            rolesObjs = Array.isArray(user.roles) ? user.roles : [];
         }
 
         setFormData({
@@ -89,7 +74,7 @@ export default function Users() {
             tel: user.tel || '',
             active: Number(user.active) ? 1 : 0,
             password: '',
-            roles: rolesIds
+            roles: rolesObjs
         });
         setIsModalOpen(true);
     };
@@ -122,11 +107,14 @@ export default function Users() {
     const handleRoleToggle = (roleId) => {
         const id = Number(roleId);
         setFormData((prev) => {
-            const exists = prev.roles.includes(id);
-            return {
-                ...prev,
-                roles: exists ? prev.roles.filter((r) => r !== id) : [...prev.roles, id]
-            };
+            const exists = prev.roles.some((r) => Number(r?.id_role) === id);
+            const nextRoles = exists
+                ? prev.roles.filter((r) => Number(r?.id_role) !== id)
+                : (() => {
+                    const obj = roles.find((rr) => Number(rr?.id_role) === id);
+                    return obj ? [...prev.roles, obj] : prev.roles;
+                })();
+            return { ...prev, roles: nextRoles };
         });
     };
 
@@ -219,7 +207,7 @@ export default function Users() {
                                             <span className="config-phone-text">{user.tel || ''}</span>
                                         </td>
                                         <td className="config-table-cell">
-                                            <span className="config-specialty-badge">{Array.isArray(user.roles_names) ? user.roles_names.join(', ') : ''}</span>
+                                            <span className="config-specialty-badge">{Array.isArray(user.roles) ? user.roles.map(r => r.name).join(', ') : ''}</span>
                                         </td>
                                         <td className="config-table-cell">
                                             <span className={`config-state-badge ${getEstadoClass(user.active)}`}>
@@ -261,135 +249,17 @@ export default function Users() {
 
             {/* Modal para Agregar/Editar usuario */}
             {isModalOpen && (
-                <div className="config-modal-overlay" onClick={() => setIsModalOpen(false)}>
-                    <div className="config-modal-container" onClick={(e) => e.stopPropagation()}>
-                        <div className="config-modal-header">
-                            <div className="config-modal-header-content">
-                                <div className="config-modal-icon">
-                                    <FiUser />
-                                </div>
-                                <div className="config-modal-header-text">
-                                    <h3 className="config-modal-title">
-                                        {editingUser ? 'Editar usuario' : 'Agregar usuario'}
-                                    </h3>
-                                    <p className="config-modal-subtitle">
-                                        {editingUser ? 'Modifica los datos del usuario' : 'Completa la información del nuevo usuario'}
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="config-close-button"
-                            >
-                                <FiX />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="config-modal-form">
-                            <div className="config-form-grid">
-                                <div className="config-form-group">
-                                    <label className="config-form-label">name</label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="config-form-input"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="config-form-group config-form-group-full">
-                                    <label className="config-form-label">Email</label>
-                                    <input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="config-form-input"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="config-form-group">
-                                    <label className="config-form-label">Teléfono</label>
-                                    <input
-                                        type="tel"
-                                        value={formData.tel}
-                                        onChange={(e) => setFormData({ ...formData, tel: e.target.value })}
-                                        className="config-form-input"
-                                    />
-                                </div>
-
-                                <div className="config-form-group config-form-group-full">
-                                    <label className="config-form-label">Roles</label>
-                                    <div className="roles-select-container">
-                                        <div className="roles-list">
-                                            {availableRoles.length === 0 ? (
-                                                <span style={{ color: '#64748b', fontSize: '12px' }}>
-                                                    No hay roles disponibles
-                                                </span>
-                                            ) :
-                                                availableRoles.map((role) => {
-                                                    const id = Number(role.id_role);
-                                                    const checked = formData.roles.includes(id);
-                                                    return (
-                                                        <label key={id} className="role-chip">
-                                                            <input
-                                                                type="checkbox"
-                                                                className="role-checkbox"
-                                                                checked={checked}
-                                                                onChange={() => handleRoleToggle(id)}
-                                                            />
-                                                            {role.name}
-                                                        </label>
-                                                    );
-                                                })}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="config-form-group config-form-group-full">
-                                    <label className="config-form-label">Estado</label>
-                                    <select
-                                        value={String(formData.active)}
-                                        onChange={(e) => setFormData({ ...formData, active: Number(e.target.value) })}
-                                        className="config-form-select"
-                                        required
-                                    >
-                                        <option value="1">Activo</option>
-                                        <option value="0">Inactivo</option>
-                                    </select>
-                                </div>
-
-                                {/* Password: requerido solo en creación */}
-                                {!editingUser && (
-                                    <div className="config-form-group config-form-group-full">
-                                        <label className="config-form-label">Contraseña</label>
-                                        <input
-                                            type="password"
-                                            value={formData.password}
-                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            className="config-form-input"
-                                            required
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="config-modal-actions">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="config-cancel-button"
-                                >
-                                    Cancelar
-                                </button>
-                                <button type="submit" className="config-submit-button">
-                                    {editingUser ? 'Actualizar' : 'Agregar'} usuario
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <ModalUser
+                    setIsModalOpen={setIsModalOpen}
+                    editingUser={editingUser}
+                    formData={formData}
+                    setFormData={setFormData}
+                    handleSubmit={handleSubmit}
+                    availableRoles={roles}
+                    rolesLoading={rolesLoading}
+                    rolesError={rolesError}
+                    onToggleRole={handleRoleToggle}
+                />
             )}
         </div>
     );

@@ -1,5 +1,5 @@
 // Rutas
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // Notificaciones
@@ -18,6 +18,7 @@ import TemplatesGallery from './pages/Comunicados/TemplatesGallery.jsx';
 import EditorComunicado from './pages/Comunicados/EditorComunicado.jsx';
 import NotFound from './pages/NotFound/NotFound.jsx';
 import Users from './pages/Users/Users.jsx';
+import usePermisos from './shared/hooks/usePermisos.js';
 
 // Provedor del usuario
 import { UserProvider } from './shared/contexts/UserContext.jsx';
@@ -27,23 +28,80 @@ export default function App() {
     <Router>
       <UserProvider>
         <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
-        <Routes>
-          {/* Rutas del Cliente */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/prestamos" element={<Prestamos />} />
-            <Route path="/horarios" element={<Horarios />} />
-            <Route path="/comunicados" element={<Comunicados />} />
-            <Route path="/comunicados/crear" element={<TemplatesGallery />} />
-            <Route path="/comunicados/crear/:tipo" element={<EditorComunicado />} />
-            <Route path="/usuarios" element={<Users />} />
-            <Route path="/inventario" element={<Inventario />} />
-
-            <Route path="/*" element={<NotFound />} />
-          </Route>
-        </Routes>
+        <AppRoutes/>
       </UserProvider>
     </Router>
+  );
+}
+
+const AppRoutes = () => {
+
+  // Componente guard que valida permisos por ruta
+  const RequirePermission = ({ permission, children }) => {
+    const { canAccessTo } = usePermisos();
+    if (!canAccessTo(permission)) {
+      return <NotFound />;
+    }
+    return children;
+  };
+
+  
+  return (
+    <Routes>
+      {/* Rutas del Cliente */}
+      <Route path="/" element={<Layout />}>
+        <Route index element={
+          <RequirePermission permission="dashboard.view">
+            <Dashboard />
+          </RequirePermission>
+        } />
+        
+        <Route path="/auth" element={<Auth />} />
+        
+        <Route path="/prestamos" element={
+          <RequirePermission permission="prestamos.view">
+            <Prestamos />
+          </RequirePermission>
+        } />
+        
+        <Route path="/horarios" element={
+          <RequirePermission permission="horarios.view">
+            <Horarios />
+          </RequirePermission>
+        } />
+        
+        <Route path="/comunicados" element={
+          <RequirePermission permission="comunicados.view">
+            <Comunicados />
+          </RequirePermission>
+        } />
+        
+        <Route path="/comunicados/crear" element={
+          <RequirePermission permission="comunicados.view">
+            <TemplatesGallery />
+          </RequirePermission>
+        } />
+        
+        <Route path="/comunicados/crear/:tipo" element={
+          <RequirePermission permission="comunicados.view">
+            <EditorComunicado />
+          </RequirePermission>
+        } />
+
+        <Route path="/usuarios" element={
+          <RequirePermission permission="usuarios.view">
+            <Users />
+          </RequirePermission>
+        } />
+
+        <Route path="/inventario" element={
+          <RequirePermission permission="inventario.view">
+            <Inventario />
+          </RequirePermission>
+        } />
+
+        <Route path="/*" element={<NotFound />} />
+      </Route>
+    </Routes>
   );
 }

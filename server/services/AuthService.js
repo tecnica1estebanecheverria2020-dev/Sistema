@@ -15,7 +15,7 @@ class AuthService {
     };
 
     createUser = async (userData) => {
-        const { name, email, password, id_role } = userData;
+        const { name, email, password, roles = [] } = userData;
         const hashedPassword = await this.hashPassword(password);
         const normalizedEmail = email.toLowerCase().trim();
 
@@ -24,22 +24,41 @@ class AuthService {
             [name, normalizedEmail, hashedPassword]
         );
 
-        await this.conex.query(
-            'INSERT INTO users_roles (id_user, id_role) VALUES (?, ?)',
-            [login.insertId, id_role]
-        );
+        // Insertar relaciones de roles si se proporcionan como objetos { id_role, name }
+        if (Array.isArray(roles) && roles.length > 0) {
+            const roleIds = Array.from(new Set(
+                roles.map(r => Number(r?.id_role)).filter(Boolean)
+            ));
 
-        const [role] = await this.conex.query(
-            'SELECT name FROM roles WHERE id_role = ?',
-            [id_role]
+            if (roleIds.length > 0) {
+                // Validar que los roles existan
+                const [validRoles] = await this.conex.query(
+                    `SELECT id_role, name FROM roles WHERE id_role IN (${roleIds.map(() => '?').join(',')})`,
+                    roleIds
+                );
+                const validSet = new Set(validRoles.map(r => r.id_role));
+                const invalid = roleIds.filter(id => !validSet.has(id));
+                if (invalid.length > 0) {
+                    throw { status: 400, message: `Roles inválidos: ${invalid.join(',')}` };
+                }
+
+                for (const rid of roleIds) {
+                    await this.conex.query('INSERT INTO users_roles (id_user, id_role) VALUES (?, ?)', [login.insertId, rid]);
+                }
+            }
+        }
+
+        // Obtener roles del usuario en formato de objetos
+        const [userRoles] = await this.conex.query(
+            'SELECT r.id_role, r.name FROM users_roles ur JOIN roles r ON ur.id_role = r.id_role WHERE ur.id_user = ?',
+            [login.insertId]
         );
 
         return {
             id_user: login.insertId,
             name,
             email: normalizedEmail,
-            id_role,
-            rol_name: role[0].name
+            roles: userRoles.map(r => ({ id_role: r.id_role, name: r.name }))
         };
     }
 
@@ -49,9 +68,7 @@ class AuthService {
             const normalizedEmail = email.toLowerCase().trim();
 
             const [login] = await this.conex.query(
-                'SELECT u.*, r.id_role, r.name AS rol_name FROM users u ' +
-                'JOIN users_roles ur ON u.id_user = ur.id_user ' +
-                'JOIN roles r ON ur.id_role = r.id_role WHERE u.email = ? AND u.active = 1',
+                'SELECT * FROM users  WHERE email = ? AND active = 1',
                 [normalizedEmail]
             );
 
@@ -91,11 +108,16 @@ class AuthService {
                 [user.id_user]
             );
 
+            // Obtener todos los roles asociados al usuario
+            const [userRoles] = await this.conex.query(
+                'SELECT r.id_role, r.name FROM users_roles ur ' +
+                'JOIN roles r ON ur.id_role = r.id_role WHERE ur.id_user = ?',
+                [user.id_user]
+            );
 
             return {
                 id_user: user.id_user,
-                id_role: user.id_role,
-                rol_name: user.rol_name,
+                roles: userRoles.map(r => ({ id_role: r.id_role, name: r.name })),
                 email: user.email,
                 name: user.name,
             }

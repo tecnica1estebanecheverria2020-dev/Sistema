@@ -203,6 +203,61 @@ class RolesController {
             handleError(res, error);
         }
     };
+
+    // Obtener roles de un usuario
+    getUserRoles = async (req, res) => {
+        try {
+            const { userId } = req.params;
+            if (!userId || isNaN(userId)) {
+                return res.status(400).json({ success: false, message: 'ID de usuario inválido' });
+            }
+
+            const roles = await this.rolesService.getUserRoles(Number(userId));
+            res.status(200).json({ success: true, message: 'Roles del usuario obtenidos', data: roles });
+        } catch (error) {
+            handleError(res, error);
+        }
+    };
+
+    // Asignar roles a un usuario (agrega sin duplicar)
+    assignRolesToUser = async (req, res) => {
+        try {
+            const { userId } = req.params;
+            const { roles } = req.body;
+
+            if (!userId || isNaN(userId)) {
+                return res.status(400).json({ success: false, message: 'ID de usuario inválido' });
+            }
+            if (!Array.isArray(roles) || roles.length === 0) {
+                return res.status(400).json({ success: false, message: 'Debe proporcionar un arreglo de roles' });
+            }
+
+            const updated = await this.rolesService.assignRolesToUser(Number(userId), roles);
+            res.status(200).json({ success: true, message: 'Roles asignados correctamente', data: updated });
+        } catch (error) {
+            handleError(res, error);
+        }
+    };
+
+    // Remover roles de un usuario (si roles vacío, remueve todos)
+    removeRolesFromUser = async (req, res) => {
+        try {
+            const { userId } = req.params;
+            const { roles } = req.body || {};
+
+            if (!userId || isNaN(userId)) {
+                return res.status(400).json({ success: false, message: 'ID de usuario inválido' });
+            }
+            if (roles && !Array.isArray(roles)) {
+                return res.status(400).json({ success: false, message: 'El campo roles debe ser un arreglo' });
+            }
+
+            const updated = await this.rolesService.removeRolesFromUser(Number(userId), roles || []);
+            res.status(200).json({ success: true, message: 'Roles removidos correctamente', data: updated });
+        } catch (error) {
+            handleError(res, error);
+        }
+    };
 }
 
 export default RolesController;

@@ -8,13 +8,13 @@ class AuthController {
 
     // No creo que sea necesario un registro, la creacion de usuarios lo controlaria el admin
     createUser = async (req, res) => {
-        const { name, email, password, id_role } = req.body;
+        const { name, email, password, roles } = req.body;
         try {
-            if (!name || !email || !password || !id_role) {
+            if (!name || !email || !password) {
                 throw { status: 400, message: 'Faltan datos para crear el usuario' };
             }
 
-            const user = await this.service.createUser({ name, email, password, id_role });
+            const user = await this.service.createUser({ name, email, password, roles: Array.isArray(roles) ? roles : [] });
 
             res.status(201).json({
                 success: true,
@@ -37,8 +37,7 @@ class AuthController {
 
             const token = generateToken({
                 id_user: user.id_user,
-                id_role: user.id_role,
-                rol_name: user.rol_name,
+                roles: Array.isArray(user.roles) ? user.roles : [],
                 email: user.email,
                 name: user.name,
             });
@@ -82,8 +81,7 @@ class AuthController {
             // Crear un usuario demo con permisos básicos
             const demoUser = {
                 id_user: 999,
-                id_role: 1,
-                rol_name: 'Demo',
+                roles: [{ id_role: 5, name: 'Profesor' }],
                 email: 'demo@sistema.com',
                 name: 'Usuario Demo'
             };
