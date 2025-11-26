@@ -66,6 +66,36 @@ class DashboardService {
       throw { status: 500, message: 'Error al obtener los préstamos de hoy', cause: error };
     }
   };
+
+  getActivitySummary = async () => {
+    try {
+      const [weeklyLoans] = await this.conex.query(`
+        SELECT COUNT(*) AS count
+        FROM loans
+        WHERE YEARWEEK(date_loan, 1) = YEARWEEK(CURDATE(), 1)
+      `);
+
+      const [distinctItemsWeek] = await this.conex.query(`
+        SELECT COUNT(DISTINCT id_inventory) AS count
+        FROM loans
+        WHERE YEARWEEK(date_loan, 1) = YEARWEEK(CURDATE(), 1)
+      `);
+
+      const [activeProfessors] = await this.conex.query(`
+        SELECT COUNT(DISTINCT id_user) AS count
+        FROM loans
+        WHERE state = 'activo'
+      `);
+
+      return {
+        weeklyLoansCount: weeklyLoans[0]?.count ?? 0,
+        mostRequestedItemsCount: distinctItemsWeek[0]?.count ?? 0,
+        activeProfessorsCount: activeProfessors[0]?.count ?? 0,
+      };
+    } catch (error) {
+      throw { status: 500, message: 'Error al obtener el resumen de actividad', cause: error };
+    }
+  };
 }
 
 export default DashboardService;

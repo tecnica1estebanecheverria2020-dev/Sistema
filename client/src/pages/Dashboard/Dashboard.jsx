@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../../shared/api/axios'
 import useNotification from '../../shared/hooks/useNotification.jsx'
 import { 
@@ -13,6 +14,7 @@ import { FaBox, FaLayerGroup } from 'react-icons/fa';
 import './style.css';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const notify = useNotification();
@@ -28,6 +30,7 @@ export default function Dashboard() {
     schedulesCount: 0,
   });
   const [todayLoans, setTodayLoans] = useState([]);
+  const [activitySummary, setActivitySummary] = useState({ weeklyLoansCount: 0, mostRequestedItemsCount: 0, activeProfessorsCount: 0 });
 
   //para que no moleste
   useEffect(() => {
@@ -46,6 +49,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData();
     fetchTodayLoans();
+    fetchActivitySummary();
     checkApi();
   }, []);
 
@@ -54,6 +58,7 @@ export default function Dashboard() {
     const interval = setInterval(() => {
       fetchData();
       fetchTodayLoans();
+      fetchActivitySummary();
       checkApi();
     }, 10000);
     return () => clearInterval(interval);
@@ -90,6 +95,20 @@ export default function Dashboard() {
       })));
     } catch (error) {
       notify(error?.message || 'Error al obtener préstamos de hoy', 'error');
+    }
+  };
+
+  const fetchActivitySummary = async () => {
+    try {
+      const resp = await axios.get('/dashboard/activity-summary');
+      const data = resp?.data?.data || {};
+      setActivitySummary({
+        weeklyLoansCount: Number(data.weeklyLoansCount || 0),
+        mostRequestedItemsCount: Number(data.mostRequestedItemsCount || 0),
+        activeProfessorsCount: Number(data.activeProfessorsCount || 0),
+      });
+    } catch (error) {
+      notify(error?.message || 'Error al obtener resumen de actividad', 'error');
     }
   };
 
@@ -266,7 +285,12 @@ export default function Dashboard() {
             {quickActions.map((action) => {
               const IconComponent = action.icon;
               return (
-                <a key={action.id} href="#" className="action-card" onClick={() => action.action()}>
+                <a
+                  key={action.id}
+                  href="#"
+                  className="action-card"
+                  onClick={(e) => { e.preventDefault(); action.action(); }}
+                >
                   <IconComponent className="action-icon" />
                   <h4 className="action-title">{action.title}</h4>
                   <p className="action-subtitle">{action.subtitle}</p>
@@ -283,20 +307,20 @@ export default function Dashboard() {
           <h2 className="section-title">Resumen de Actividad</h2>
         </div>
         
-        <div className="activity-stats">
-          <div className="activity-stat">
-            <div className="activity-stat-value">24</div>
-            <div className="activity-stat-label">Préstamos esta semana</div>
+          <div className="activity-stats">
+            <div className="activity-stat">
+            <div className="activity-stat-value">{activitySummary.weeklyLoansCount}</div>
+              <div className="activity-stat-label">Préstamos esta semana</div>
+            </div>
+            <div className="activity-stat">
+              <div className="activity-stat-value">{activitySummary.mostRequestedItemsCount}</div>
+              <div className="activity-stat-label">Items más solicitados</div>
+            </div>
+            <div className="activity-stat">
+              <div className="activity-stat-value">{activitySummary.activeProfessorsCount}</div>
+              <div className="activity-stat-label">Profesores activos</div>
+            </div>
           </div>
-          <div className="activity-stat">
-            <div className="activity-stat-value">8</div>
-            <div className="activity-stat-label">Items más solicitados</div>
-          </div>
-          <div className="activity-stat">
-            <div className="activity-stat-value">12</div>
-            <div className="activity-stat-label">Profesores activos</div>
-          </div>
-        </div>
       </div>
     </div>
   );

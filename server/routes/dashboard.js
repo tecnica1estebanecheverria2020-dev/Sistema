@@ -10,5 +10,6 @@ const dashboardController = new DashboardController(dashboardService);
 
 router.get('/data', dashboardController.getData);
 router.get('/today-loans', dashboardController.getTodayLoans);
+router.get('/activity-summary', dashboardController.getActivitySummary);
 
 export default router;

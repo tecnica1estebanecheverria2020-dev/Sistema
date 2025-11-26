@@ -18,8 +18,8 @@ class DashboardController {
         }
     };
 
-    // Obtener préstamos del día (fecha de hoy)
-    getTodayLoans = async (req, res) => {
+  // Obtener préstamos del día (fecha de hoy)
+  getTodayLoans = async (req, res) => {
         try {
             const loans = await this.DashboardService.getTodayLoans();
             res.status(200).json({
@@ -30,7 +30,19 @@ class DashboardController {
         } catch (err) {
             return handleError(res, err);
         }
-    };
+  };
+
+  getActivitySummary = async (req, res) => {
+    try {
+      const summary = await this.DashboardService.getActivitySummary();
+      res.status(200).json({
+        success: true,
+        data: summary
+      });
+    } catch (err) {
+      return handleError(res, err);
+    }
+  };
 }
 
 export default DashboardController;
