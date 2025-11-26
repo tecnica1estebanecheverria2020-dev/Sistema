@@ -1,123 +1,137 @@
 import React, { useState, useEffect } from 'react';
-import { FiSettings, FiPlus, FiEdit2, FiTrash2, FiUser, FiX, FiUsers } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiUser, FiX, FiUsers } from 'react-icons/fi';
+import { useUsers } from '../../shared/hooks/useUsers';
+import { rolesService } from '../../shared/services/rolesService';
+import './style.css';
 
 export default function Users() {
-    const [users, setUsers] = useState([]);
+    const { users, loading, error, fetchUsers, createUser, updateUser, deleteUser, toggleUser, getUserById } = useUsers();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [availableRoles, setAvailableRoles] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        telefono: '',
-        especialidad: '',
-        estado: 'Activo'
+        tel: '',
+        active: 1,
+        password: '', // requerido solo en creación
+        roles: []
     });
 
-    // Datos de ejemplo para users
     useEffect(() => {
-        setUsers([
-            {
-                id: 1,
-                name: 'Juan',
-                apellido: 'Pérez',
-                email: 'juan.perez@escuela.edu',
-                telefono: '123-456-7890',
-                especialidad: 'Matemáticas',
-                estado: 'Activo'
-            },
-            {
-                id: 2,
-                name: 'María',
-                apellido: 'García',
-                email: 'maria.garcia@escuela.edu',
-                telefono: '098-765-4321',
-                especialidad: 'Ciencias',
-                estado: 'Activo'
-            },
-            {
-                id: 3,
-                name: 'Carlos',
-                apellido: 'López',
-                email: 'carlos.lopez@escuela.edu',
-                telefono: '555-123-4567',
-                especialidad: 'Historia',
-                estado: 'Inactivo'
+        fetchUsers();
+    }, [fetchUsers]);
+
+    useEffect(() => {
+        const loadRoles = async () => {
+            try {
+                const roles = await rolesService.getRoles();
+                setAvailableRoles(roles);
+            } catch (e) {
+                // En caso de error, dejamos la lista vacía. El error global del hook cubrirá feedback.
+                setAvailableRoles([]);
             }
-        ]);
+        };
+        loadRoles();
     }, []);
 
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.especialidad.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredUsers = users.filter(user => {
+        const rolesText = Array.isArray(user.roles_names) ? user.roles_names.join(', ') : '';
+        return (
+            String(user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            String(user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            rolesText.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
+        let ok = false;
         if (editingUser) {
-            // Editar user existente
-            setUsers(users.map(user =>
-                user.id === editingUser.id
-                    ? { ...formData, id: editingUser.id }
-                    : user
-            ));
+            const payload = { ...formData };
+            // no enviar password vacía en actualización
+            if (!payload.password) delete payload.password;
+            ok = await updateUser(editingUser.id_user, payload);
         } else {
-            // Agregar nuevo usuario
-            const newUser = {
-                ...formData,
-                id: Math.max(...users.map(p => p.id), 0) + 1
-            };
-            setUsers([...users, newUser]);
+            const payload = { ...formData };
+            ok = await createUser(payload);
         }
-
-        resetForm();
-        setIsModalOpen(false);
+        if (ok) {
+            resetForm();
+            setIsModalOpen(false);
+        }
     };
 
-    const handleEdit = (user) => {
+    const handleEdit = async (user) => {
         setEditingUser(user);
+        // Intentamos obtener el detalle con IDs de roles
+        let rolesIds = [];
+        try {
+            const detail = await getUserById(user.id_user);
+            if (detail && Array.isArray(detail.roles_ids)) {
+                rolesIds = detail.roles_ids.map((r) => Number(r));
+            } else if (Array.isArray(user.roles_names) && availableRoles.length > 0) {
+                // Fallback: mapear por nombre si no hay roles_ids
+                const nameSet = new Set(user.roles_names);
+                rolesIds = availableRoles
+                    .filter((r) => nameSet.has(r.name))
+                    .map((r) => Number(r.id_role));
+            }
+        } catch (_) {
+            // Si falla, dejamos roles vacío
+            rolesIds = [];
+        }
+
         setFormData({
             name: user.name,
             email: user.email,
-            telefono: user.telefono,
-            especialidad: user.especialidad,
-            estado: user.estado
+            tel: user.tel || '',
+            active: Number(user.active) ? 1 : 0,
+            password: '',
+            roles: rolesIds
         });
         setIsModalOpen(true);
     };
 
-    const handleDelete = (user) => {
+    const handleDelete = async (user) => {
         if (window.confirm(`¿Estás seguro de que deseas eliminar al usuario ${user.name}?`)) {
-            setUsers(users.filter(p => p.id !== user.id));
+            await deleteUser(user.id_user);
         }
+    };
+
+    const handleToggle = async (user) => {
+        await toggleUser(user.id_user);
     };
 
     const resetForm = () => {
         setFormData({
             name: '',
             email: '',
-            telefono: '',
-            especialidad: '',
-            estado: 'Activo'
+            tel: '',
+            active: 1,
+            password: '',
+            roles: []
         });
         setEditingUser(null);
     };
 
-    const getEstadoClass = (estado) => {
-        switch (estado.toLowerCase()) {
-            case 'activo':
-                return 'active';
-            case 'inactivo':
-                return 'inactive';
-            default:
-                return '';
-        }
+    const getEstadoLabel = (active) => (Number(active) ? 'Activo' : 'Inactivo');
+    const getEstadoClass = (active) => (Number(active) ? 'active' : 'inactive');
+
+    const handleRoleToggle = (roleId) => {
+        const id = Number(roleId);
+        setFormData((prev) => {
+            const exists = prev.roles.includes(id);
+            return {
+                ...prev,
+                roles: exists ? prev.roles.filter((r) => r !== id) : [...prev.roles, id]
+            };
+        });
     };
 
     return (
-        <div>
+        <div className="config-container">
             {/* Gestión de Usuarios */}
             <div className="config-section">
                 <div className="section-header">
@@ -145,7 +159,7 @@ export default function Users() {
                     <div className="config-search-container">
                         <input
                             type="text"
-                            placeholder="Buscar por name, email o especialidad..."
+                            placeholder="Buscar por nombre, email o roles..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="config-search-input"
@@ -156,6 +170,17 @@ export default function Users() {
                         <span className="config-count-text">Total: {filteredUsers.length} usuarios</span>
                     </div>
                 </div>
+
+                {loading && (
+                    <div className="config-info">
+                        <span>Cargando usuarios...</span>
+                    </div>
+                )}
+                {error && (
+                    <div className="config-error">
+                        <span>Error: {error}</span>
+                    </div>
+                )}
 
                 {/* Tabla de Usuarios */}
                 <div className="config-table-container">
@@ -174,14 +199,14 @@ export default function Users() {
                                     <th className="config-table-cell config-header-cell">name</th>
                                     <th className="config-table-cell config-header-cell">Email</th>
                                     <th className="config-table-cell config-header-cell">Teléfono</th>
-                                    <th className="config-table-cell config-header-cell">Especialidad</th>
+                                    <th className="config-table-cell config-header-cell">Roles</th>
                                     <th className="config-table-cell config-header-cell">Estado</th>
                                     <th className="config-table-cell config-header-cell">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="config-table-body">
                                 {filteredUsers.map((user) => (
-                                    <tr key={user.id} className="config-table-row">
+                                    <tr key={user.id_user} className="config-table-row">
                                         <td className="config-table-cell">
                                             <div className="config-user-name">
                                                 <span className="config-name-text">{user.name}</span>
@@ -191,14 +216,14 @@ export default function Users() {
                                             <span className="config-email-text">{user.email}</span>
                                         </td>
                                         <td className="config-table-cell">
-                                            <span className="config-phone-text">{user.telefono}</span>
+                                            <span className="config-phone-text">{user.tel || ''}</span>
                                         </td>
                                         <td className="config-table-cell">
-                                            <span className="config-specialty-badge">{user.especialidad}</span>
+                                            <span className="config-specialty-badge">{Array.isArray(user.roles_names) ? user.roles_names.join(', ') : ''}</span>
                                         </td>
                                         <td className="config-table-cell">
-                                            <span className={`config-state-badge ${getEstadoClass(user.estado)}`}>
-                                                {user.estado}
+                                            <span className={`config-state-badge ${getEstadoClass(user.active)}`}>
+                                                {getEstadoLabel(user.active)}
                                             </span>
                                         </td>
                                         <td className="config-table-cell">
@@ -216,6 +241,13 @@ export default function Users() {
                                                     title="Eliminar"
                                                 >
                                                     <FiTrash2 />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleToggle(user)}
+                                                    className="config-action-button"
+                                                    title="Activar/Desactivar"
+                                                >
+                                                    {Number(user.active) ? 'Desactivar' : 'Activar'}
                                                 </button>
                                             </div>
                                         </td>
@@ -281,36 +313,66 @@ export default function Users() {
                                     <label className="config-form-label">Teléfono</label>
                                     <input
                                         type="tel"
-                                        value={formData.telefono}
-                                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                                        value={formData.tel}
+                                        onChange={(e) => setFormData({ ...formData, tel: e.target.value })}
                                         className="config-form-input"
-                                        required
                                     />
                                 </div>
 
-                                <div className="config-form-group">
-                                    <label className="config-form-label">Especialidad</label>
-                                    <input
-                                        type="text"
-                                        value={formData.especialidad}
-                                        onChange={(e) => setFormData({ ...formData, especialidad: e.target.value })}
-                                        className="config-form-input"
-                                        required
-                                    />
+                                <div className="config-form-group config-form-group-full">
+                                    <label className="config-form-label">Roles</label>
+                                    <div className="roles-select-container">
+                                        <div className="roles-list">
+                                            {availableRoles.length === 0 ? (
+                                                <span style={{ color: '#64748b', fontSize: '12px' }}>
+                                                    No hay roles disponibles
+                                                </span>
+                                            ) :
+                                                availableRoles.map((role) => {
+                                                    const id = Number(role.id_role);
+                                                    const checked = formData.roles.includes(id);
+                                                    return (
+                                                        <label key={id} className="role-chip">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="role-checkbox"
+                                                                checked={checked}
+                                                                onChange={() => handleRoleToggle(id)}
+                                                            />
+                                                            {role.name}
+                                                        </label>
+                                                    );
+                                                })}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="config-form-group config-form-group-full">
                                     <label className="config-form-label">Estado</label>
                                     <select
-                                        value={formData.estado}
-                                        onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                                        value={String(formData.active)}
+                                        onChange={(e) => setFormData({ ...formData, active: Number(e.target.value) })}
                                         className="config-form-select"
                                         required
                                     >
-                                        <option value="Activo">Activo</option>
-                                        <option value="Inactivo">Inactivo</option>
+                                        <option value="1">Activo</option>
+                                        <option value="0">Inactivo</option>
                                     </select>
                                 </div>
+
+                                {/* Password: requerido solo en creación */}
+                                {!editingUser && (
+                                    <div className="config-form-group config-form-group-full">
+                                        <label className="config-form-label">Contraseña</label>
+                                        <input
+                                            type="password"
+                                            value={formData.password}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                            className="config-form-input"
+                                            required
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="config-modal-actions">
@@ -321,10 +383,7 @@ export default function Users() {
                                 >
                                     Cancelar
                                 </button>
-                                <button
-                                    type="submit"
-                                    className="config-submit-button"
-                                >
+                                <button type="submit" className="config-submit-button">
                                     {editingUser ? 'Actualizar' : 'Agregar'} usuario
                                 </button>
                             </div>
