@@ -44,6 +44,20 @@ export default function Prestamos() {
   const [barcodeBuffer, setBarcodeBuffer] = useState('');
   const [lastKeyTime, setLastKeyTime] = useState(0);
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false // formato 24 horas
+    });
+  };
+
   // Utilidad: mapear préstamos del backend a la UI
   const mapLoans = (data = []) => {
     return (data || []).map((l) => ({
@@ -52,8 +66,8 @@ export default function Prestamos() {
       cantidad: l.quantity,
       solicitante: l.applicant || '-',
       profesor: l.user_name || '-',
-      fechaPrestamo: l.date_loan ? new Date(l.date_loan).toLocaleString() : '-',
-      fechaDevolucion: l.date_return ? new Date(l.date_return).toLocaleString() : null,
+      fechaPrestamo: formatDateTime(l.date_loan),
+      fechaDevolucion: l.date_return ? formatDateTime(l.date_return) : null,
       estado: l.state === 'devuelto' ? 'Devuelto' : 'Activo',
       observacionesDevolucion: l.observations_return || ''
     }));
@@ -169,40 +183,6 @@ export default function Prestamos() {
       ];
     });
     notify('Producto agregado al pedido', 'success');
-  };
-
-  const CustomSelect = ({ value, onChange, options, placeholder, className = '' }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    
-    return (
-      <div className={`custom-select ${className} ${isOpen ? 'open' : ''}`}>
-        <div 
-          className="select-trigger"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <span className="select-value">
-            {value || placeholder}
-          </span>
-          <FiChevronDown className="select-arrow" />
-        </div>
-        {isOpen && (
-          <div className="select-dropdown">
-            {options.map((option, index) => (
-              <div
-                key={index}
-                className={`select-option ${value === option.value ? 'selected' : ''}`}
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-              >
-                {option.label}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
   };
 
   const handleInputChange = (e) => {

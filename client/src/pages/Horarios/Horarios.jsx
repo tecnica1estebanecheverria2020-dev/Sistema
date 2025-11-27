@@ -6,6 +6,7 @@ import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import "./style.css";
 import { schedulesService } from "../../shared/services/schedulesServices";
 import { catalogsService } from "../../shared/services/catalogsService";
+import useNotification from "../../shared/hooks/useNotification";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
@@ -31,16 +32,6 @@ const EN_TO_ES = {
   Sunday: "Domingo",
 };
 
-const ES_TO_EN = {
-  Lunes: "Monday",
-  Martes: "Tuesday",
-  Miércoles: "Wednesday",
-  Jueves: "Thursday",
-  Viernes: "Friday",
-  Sábado: "Saturday",
-  Domingo: "Sunday",
-};
-
 function mapBackendSchedule(s) {
   return {
     id: s.id_schedule,
@@ -59,6 +50,7 @@ function mapBackendSchedule(s) {
 }
 
 export default function Horarios() {
+  const notify = useNotification();
   const [schedules, setSchedules] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTurno, setSelectedTurno] = useState("Mañana");
@@ -206,7 +198,7 @@ export default function Horarios() {
     } catch (err) {
       console.error(err);
       const msg = err?.response?.data?.message || 'Error al eliminar horario';
-      alert(msg);
+      notify(msg, 'error');
     }
   };
 
@@ -357,6 +349,7 @@ export default function Horarios() {
                             <div key={`${dia}-${timeSlot.label}`} className="schedule-cell">
                               {schedulesForSlot.map((schedule) => (
                                 <div key={schedule.id} className="schedule-item">
+                                  <div className="schedule-time"><span className="time-range"><FiClock /> {schedule.horaInicio}</span></div>
                                   <div className="schedule-aula">{schedule.aula}</div>
                                   <div className="schedule-materia">
                                     <span className="materia-name">{schedule.materia}</span>
@@ -395,13 +388,14 @@ export default function Horarios() {
             filteredSchedules.map((schedule) => (
               <div key={schedule.id} className="schedule-list-item">
                 <div className="schedule-info">
-                  <div className="schedule-main">
-                    <div className="schedule-badges">
-                      <span className="aula-badge">{schedule.aula}</span>
-                      <span className="materia-name">{schedule.materia}</span>
-                      <span className="profesor-badge">{schedule.profesor}</span>
-                      <span className="grupo-badge">{schedule.grupoTaller}</span>
-                    </div>
+                <div className="schedule-main">
+                  <div className="schedule-badges">
+                    <span className="time-range"><FiClock /> {schedule.horaInicio}</span>
+                    <span className="aula-badge">{schedule.aula}</span>
+                    <span className="materia-name">{schedule.materia}</span>
+                    <span className="profesor-badge">{schedule.profesor}</span>
+                    <span className="grupo-badge">{schedule.grupoTaller}</span>
+                  </div>
                     <div className="schedule-details">
                       <span>{schedule.diaSemana}</span>
                       <span className="separator">•</span>

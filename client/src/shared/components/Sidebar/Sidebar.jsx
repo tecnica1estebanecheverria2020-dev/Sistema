@@ -3,6 +3,7 @@ import { useState } from 'react';
 import './style.css';
 import useAuth from '../../hooks/useAuth.js';
 import usePermisos from '../../hooks/usePermisos.js';
+import useGlobalLoading from '../../hooks/useGlobalLoading.jsx';
 import { 
     FiHome, 
     FiPackage, 
@@ -21,6 +22,7 @@ import { FaBox } from 'react-icons/fa';
 export default function Sidebar() {
     const { user, handleLogout } = useAuth();
     const { canAccessTo } = usePermisos();
+    const { startSectionLoading } = useGlobalLoading();
     const location = useLocation();
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
@@ -68,6 +70,7 @@ export default function Sidebar() {
                                 key={item.path}
                                 to={item.path} 
                                 className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+                                onClick={() => { if (!isActive) startSectionLoading(); }}
                             >
                                 <Icon className="sidebar-nav-icon" />
                                 <span className="sidebar-nav-label">{item.label}</span>

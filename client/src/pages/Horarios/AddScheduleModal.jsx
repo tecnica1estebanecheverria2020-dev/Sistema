@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { FiX, FiClock } from "react-icons/fi";
 import { schedulesService } from "../../shared/services/schedulesServices";
 import { catalogsService } from "../../shared/services/catalogsService";
+import useNotification from "../../shared/hooks/useNotification";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 const TURNOS = ["Mañana", "Tarde"];
@@ -15,6 +16,8 @@ const DAY_TO_EN = {
 };
 
 export default function AddScheduleModal({ isOpen, onClose, onSave }) {
+  const notify = useNotification();
+
   const [formData, setFormData] = useState({
     id_classroom: "",
     id_workshop_group: "",
@@ -52,11 +55,11 @@ export default function AddScheduleModal({ isOpen, onClose, onSave }) {
         setSubjectUsers(sus);
       } catch (error) {
         console.error(error);
-        alert('Error al cargar catálogos');
+        notify('Error al cargar catálogos', 'error');
       }
     };
     loadCatalogs();
-  }, [isOpen]);
+  }, [isOpen, notify]);
 
   const availableSubjects = useMemo(() => {
     if (!selectedTeacherId) return subjects;
@@ -94,17 +97,17 @@ export default function AddScheduleModal({ isOpen, onClose, onSave }) {
     const requiredFields = ['id_classroom', 'id_workshop_group', 'diaSemana', 'turno', 'horaInicio', 'horaFin'];
     const missing = requiredFields.filter((f) => !formData[f]);
     if (missing.length > 0) {
-      alert('Por favor completa todos los campos requeridos');
+      notify(`Por favor completa todos los campos requeridos: ${missing.join(', ')}`, 'warning');
       return;
     }
 
     if (!selectedTeacherId || !selectedSubjectId) {
-      alert('Selecciona docente y materia');
+      notify('Selecciona docente y materia', 'warning');
       return;
     }
 
     if (!subjectUserId) {
-      alert('La combinación Docente + Materia no está registrada');
+      notify('La combinación Docente + Materia no está registrada', 'warning');
       return;
     }
 
@@ -127,7 +130,7 @@ export default function AddScheduleModal({ isOpen, onClose, onSave }) {
     } catch (err) {
       console.error(err);
       const msg = err?.response?.data?.message || 'Error al crear el horario';
-      alert(msg);
+      notify(msg, 'error');
     }
   };
 

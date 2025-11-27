@@ -10,6 +10,7 @@ import {
   FiRotateCcw,
   FiPlus as FiPlusIcon,
 } from 'react-icons/fi';
+import { LuBinary } from "react-icons/lu";
 import CustomSelect from './CustomSelect';
 
 export default function LoanModal(props) {
@@ -127,8 +128,8 @@ export default function LoanModal(props) {
                         onClick={() => setScannerEnabled(false)}
                         title="Desactivar escáner"
                       >
-                        <FiCamera />
-                        Escáner activo
+                        <LuBinary size={20} />
+                        Ingresar código manualmente
                       </div>
                       <p className="qr-note">
                         Si tienes un lector de barras USB, al escanear llenará automáticamente el código y se detectará.
@@ -142,7 +143,7 @@ export default function LoanModal(props) {
                         title="Activar escáner"
                       >
                         <FiCamera />
-                        Escáner desactivado
+                        Utilizar escáner
                       </div>
                       <div className="manual-code" style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
                         <input
