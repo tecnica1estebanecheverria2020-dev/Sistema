@@ -18,6 +18,7 @@ import schedulesRoutes from './routes/schedules.js';
 import dashboardRoutes from './routes/dashboard.js';
 import catalogsRoutes from './routes/catalogs.js';
 import usersRoutes from './routes/users.js';
+import comunicadosRoutes from './routes/comunicados.js';
 
 // Middlewares
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/schedules', schedulesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/catalogs', catalogsRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/comunicados', comunicadosRoutes);
 
 // Testeo de api
 app.get('/api/test', async (req, res) => {

@@ -7,6 +7,8 @@ import { useDropzone } from 'react-dropzone';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import './style.css';
+import useNotification from '../../shared/hooks/useNotification.jsx';
+import { comunicadosService } from './services/comunicadosService';
 
 const quillModules = {
   toolbar: [[{ font: [] }, { size: [] }], ['bold', 'italic', 'underline'], [{ color: [] }, { background: [] }], [{ align: [] }], [{ list: 'ordered' }, { list: 'bullet' }], ['clean']],
@@ -90,6 +92,8 @@ function InformativoEditor() {
   const [selectedId, setSelectedId] = useState(null);
   const [pendingImage, setPendingImage] = useState(null);
   const [importMode, setImportMode] = useState('content');
+  const notify = useNotification();
+  const navigate = useNavigate();
 
   const addImage = (url) => { if (url) setImagenes((prev) => [...prev, { id: `${Date.now()}`, src: url, size: 160 }]); };
   const removeImage = (idx) => setImagenes((prev) => prev.filter((_, i) => i !== idx));
@@ -99,7 +103,33 @@ function InformativoEditor() {
   const removeIcon = (idx) => setIcons((prev) => prev.filter((_, i) => i !== idx));
   const addIconUrl = (url) => { if (url) setIconUrls((p) => [...p, url]); };
   const removeIconUrl = (idx) => setIconUrls((p) => p.filter((_, i) => i !== idx));
-  const validate = () => { const e = {}; if (!titulo.trim()) e.titulo = 'Requerido'; if (!contenido.trim()) e.contenido = 'Requerido'; setErrors(e); return Object.keys(e).length === 0; };
+  const validate = async () => {
+    const e = {};
+    if (!titulo.trim()) e.titulo = 'Requerido';
+    if (!contenido.trim()) e.contenido = 'Requerido';
+    setErrors(e);
+    if (Object.keys(e).length === 0) {
+      try {
+        const payload = {
+          tipo: 'informativo',
+          titulo,
+          contenido,
+          bgColor,
+          bgImage,
+          bgOpacity,
+          imagenes,
+          links,
+          icons,
+          iconUrls
+        };
+        await comunicadosService.createComunicado(payload);
+        notify('Comunicado creado exitosamente', 'success');
+        navigate('/comunicados');
+      } catch (error) {
+        notify(error?.message || 'Error al crear el comunicado', 'error');
+      }
+    }
+  };
   const iconMap = { info: <FiInfo />, book: <FiBook />, alert: <FiAlertTriangle /> };
   const previewStyle = { backgroundColor: bgColor, backgroundImage: bgImage ? `url(${bgImage})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' };
 
@@ -372,11 +402,35 @@ function PreviasEditor() {
   const [requisitos, setRequisitos] = useState('DNI, Libreta, Constancia de alumno regular');
   const [contacto, setContacto] = useState({ nombre: 'Secretaría', email: 'secretaria@ejemplo.edu', telefono: '123456789' });
   const [errors, setErrors] = useState({});
+  const notify = useNotification();
+  const navigate = useNavigate();
   const addFecha = (v) => { if (v) setFechas((p) => [...p, v]); };
   const removeFecha = (i) => setFechas((p) => p.filter((_, idx) => idx !== i));
   const addMateria = (v) => { if (v) setMaterias((p) => [...p, v]); };
   const removeMateria = (i) => setMaterias((p) => p.filter((_, idx) => idx !== i));
-  const validate = () => { const e = {}; if (fechas.length === 0) e.fechas = 'Agregar al menos una fecha'; if (materias.length === 0) e.materias = 'Agregar al menos una materia'; setErrors(e); return Object.keys(e).length === 0; };
+  const validate = async () => {
+    const e = {};
+    if (fechas.length === 0) e.fechas = 'Agregar al menos una fecha';
+    if (materias.length === 0) e.materias = 'Agregar al menos una materia';
+    setErrors(e);
+    if (Object.keys(e).length === 0) {
+      try {
+        const payload = {
+          tipo: 'previas',
+          titulo: 'Inscripciones a Previas',
+          fechas,
+          materias,
+          requisitos,
+          contacto
+        };
+        await comunicadosService.createComunicado(payload);
+        notify('Comunicado creado exitosamente', 'success');
+        navigate('/comunicados');
+      } catch (error) {
+        notify(error?.message || 'Error al crear el comunicado', 'error');
+      }
+    }
+  };
   return (
     <div className="comunicados-template-card">
       <div className="comunicados-template-header"><h3 className="comunicados-template-title">Previas</h3></div>
@@ -425,11 +479,36 @@ function SocialEditor() {
   const [bgImage, setBgImage] = useState('');
   const [bgOpacity, setBgOpacity] = useState(0.0);
   const [errors, setErrors] = useState({});
+  const notify = useNotification();
+  const navigate = useNavigate();
   const addImagen = (url) => { if (url) setGaleria((p) => [...p, { id: `${Date.now()}`, src: url, size: 160 }]); };
   const removeImagen = (i) => setGaleria((p) => p.filter((_, idx) => idx !== i));
   const addEtiqueta = (tag) => { if (tag) setEtiquetas((p) => [...p, tag]); };
   const removeEtiqueta = (i) => setEtiquetas((p) => p.filter((_, idx) => idx !== i));
-  const validate = () => { const e = {}; if (!mensaje.trim()) e.mensaje = 'Requerido'; setErrors(e); return Object.keys(e).length === 0; };
+  const validate = async () => {
+    const e = {};
+    if (!mensaje.trim()) e.mensaje = 'Requerido';
+    setErrors(e);
+    if (Object.keys(e).length === 0) {
+      try {
+        const payload = {
+          tipo: 'social',
+          titulo: 'Social',
+          mensaje,
+          etiquetas,
+          bgColor,
+          bgImage,
+          bgOpacity,
+          galeria: galeria.map((g) => ({ src: g.src }))
+        };
+        await comunicadosService.createComunicado(payload);
+        notify('Comunicado creado exitosamente', 'success');
+        navigate('/comunicados');
+      } catch (error) {
+        notify(error?.message || 'Error al crear el comunicado', 'error');
+      }
+    }
+  };
   const previewStyle = { backgroundColor: bgColor, backgroundImage: bgImage ? `url(${bgImage})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' };
   return (
     <div className="comunicados-template-card">
