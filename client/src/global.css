@@ -33,6 +33,18 @@ main {
   margin-left: 280px; /* Actualizado de 320px a 280px */
 }
 
+.loading-icon-mini {
+  font-size: 24px;
+  color: #6b1426;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Media queries para responsive */
 @media (max-width: 1024px) {
   .layout.with-sidebar main {

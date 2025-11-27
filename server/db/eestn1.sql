@@ -64,6 +64,24 @@ INSERT INTO `classroom` (`id_classroom`, `name`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `comunicados`
+--
+
+CREATE TABLE comunicados (
+  id_comunicado INT AUTO_INCREMENT PRIMARY KEY,
+  tipo VARCHAR(20) NOT NULL,
+  titulo VARCHAR(255) NOT NULL,
+  contenido_html MEDIUMTEXT,
+  bg_color VARCHAR(20),
+  bg_image_url TEXT,
+  bg_opacity DECIMAL(3,2) DEFAULT 0.0,
+  payload JSON NOT NULL,
+  created_by INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
 -- Estructura de tabla para la tabla `inventory`
 --
 

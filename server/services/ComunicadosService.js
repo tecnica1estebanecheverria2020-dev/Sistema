@@ -3,25 +3,6 @@ class ComunicadosService {
     this.conex = conex
   }
 
-  async ensureSchema() {
-    const sql = `
-      CREATE TABLE IF NOT EXISTS comunicados (
-        id_comunicado INT AUTO_INCREMENT PRIMARY KEY,
-        tipo VARCHAR(20) NOT NULL,
-        titulo VARCHAR(255) NOT NULL,
-        contenido_html MEDIUMTEXT,
-        bg_color VARCHAR(20),
-        bg_image_url TEXT,
-        bg_opacity DECIMAL(3,2) DEFAULT 0.0,
-        payload JSON NOT NULL,
-        created_by INT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `
-    await this.conex.query(sql)
-  }
-
   async create(record) {
     const {
       tipo,
@@ -33,8 +14,6 @@ class ComunicadosService {
       payload,
       created_by
     } = record
-
-    await this.ensureSchema()
 
     const [res] = await this.conex.query(
       'INSERT INTO comunicados (tipo, titulo, contenido_html, bg_color, bg_image_url, bg_opacity, payload, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -54,7 +33,6 @@ class ComunicadosService {
   }
 
   async getAll() {
-    await this.ensureSchema()
     const [rows] = await this.conex.query(
       `SELECT c.*, u.name AS author_name
        FROM comunicados c
@@ -68,7 +46,6 @@ class ComunicadosService {
   }
 
   async getById(id) {
-    await this.ensureSchema()
     const [rows] = await this.conex.query(
       `SELECT c.*, u.name AS author_name
        FROM comunicados c

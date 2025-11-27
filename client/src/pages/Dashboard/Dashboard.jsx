@@ -1,41 +1,58 @@
-import { useState } from 'react';
-import { useEffect } from 'react';
+import './style.css';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from '../../shared/api/axios'
-import useNotification from '../../shared/hooks/useNotification.jsx'
-import { 
-  FiCheckCircle, 
-  FiClock, 
+import {
+  FiCheckCircle,
+  FiClock,
   FiAlertTriangle,
   FiCalendar,
   FiPlus,
+  FiLoader
 } from 'react-icons/fi';
 import { FaBox, FaLayerGroup } from 'react-icons/fa';
-import './style.css';
+import useData from './hooks/useData';
+
+// Mini icono de carga
+const loadingIcon = () => {
+  return <FiLoader className="loading-icon-mini" />
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [loading, setLoading] = useState(true);
-  const notify = useNotification();
-  const [serverStatus, setServerStatus] = useState({
-    success: false,
-    message: '',
-    connection: false
-  });
-  const [dashboardData, setDashboardData] = useState({
-    inventoryTotal: 0,
-    inventoryAvailable: 0,
-    activeLoans: 0,
-    schedulesCount: 0,
-  });
-  const [todayLoans, setTodayLoans] = useState([]);
-  const [activitySummary, setActivitySummary] = useState({ weeklyLoansCount: 0, mostRequestedItemsCount: 0, activeProfessorsCount: 0 });
 
-  //para que no moleste
-  useEffect(() => {
+  const {
+    fetchData,
+    fetchTodayLoans,
+    fetchActivitySummary,
+    dashboardData, todayLoans, activitySummary,
+    loading,
+  } = useData();
 
-  }, [loading, serverStatus]);
+  const getAllData = async () => {
+    await fetchData();
+    await fetchTodayLoans();
+    await fetchActivitySummary();
+  }
+
+  const getIcon = (category) => {
+    if (loading) return loadingIcon;
+
+    switch (category) {
+      case 'inventory':
+        return FaBox;
+      case 'available':
+        return FiCheckCircle;
+      case 'loans':
+        return FiClock;
+      case 'pending':
+        return FiAlertTriangle;
+      case 'returned':
+        return FiCalendar;
+      default:
+        return null;
+    }
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -47,135 +64,56 @@ export default function Dashboard() {
 
   // Obtener datos del dashboard al montar el componente
   useEffect(() => {
-    fetchData();
-    fetchTodayLoans();
-    fetchActivitySummary();
-    checkApi();
+    getAllData();
   }, []);
 
-  // Actualizar cada 10 segundos (datos del dashboard y estado de API)
+  // Actualizar cada 5 segundos (datos del dashboard y estado de API)
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchData();
-      fetchTodayLoans();
-      fetchActivitySummary();
-      checkApi();
-    }, 10000);
+      getAllData();
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
-
-   const fetchData = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/dashboard/data');
-      const data = response?.data?.data || {};
-      setDashboardData(prev => ({
-        ...prev,
-        inventoryTotal: Number(data.totalInventoryItems || 0),
-        inventoryAvailable: Number(data.availableInventoryItems || 0),
-        activeLoans: Number(data.activeLoans || 0),
-        schedulesCount: Number(data.totalSchedules || 0),
-      }));  
-    } catch (error) {
-      notify(error?.message || 'Error al obtener los datos del dashboard', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTodayLoans = async () => {
-    try {
-      const resp = await axios.get('/dashboard/today-loans');
-      const loans = resp?.data?.loans || [];
-      setTodayLoans(loans.map((l, idx) => ({
-        id: idx + 1,
-        item: l.item_name,
-        professor: l.user_name,
-        time: l.time,
-      })));
-    } catch (error) {
-      notify(error?.message || 'Error al obtener préstamos de hoy', 'error');
-    }
-  };
-
-  const fetchActivitySummary = async () => {
-    try {
-      const resp = await axios.get('/dashboard/activity-summary');
-      const data = resp?.data?.data || {};
-      setActivitySummary({
-        weeklyLoansCount: Number(data.weeklyLoansCount || 0),
-        mostRequestedItemsCount: Number(data.mostRequestedItemsCount || 0),
-        activeProfessorsCount: Number(data.activeProfessorsCount || 0),
-      });
-    } catch (error) {
-      notify(error?.message || 'Error al obtener resumen de actividad', 'error');
-    }
-  };
-
-  const checkApi = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/test');
-      if (response.data?.success) {
-        setServerStatus({
-          success: true,
-          message: response.data?.message || 'Servidor operativo',
-          connection: true
-        });
-      } else {
-        notify(response.data?.message || 'El servidor está caído', 'error');
-      }
-    } catch (err) {
-      console.error(err?.response?.data?.message || 'El servidor está caído:', err);
-      setServerStatus({
-        success: false,
-        message: err?.response?.data?.message || 'El servidor está caído',
-        connection: false
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const statsCards = [
     {
       id: 1,
       title: 'Total Inventario',
-      value: String(dashboardData.inventoryTotal),
+      value: String(dashboardData?.inventoryTotal || '0'),
       subtitle: 'items registrados',
-      icon: FaBox,
+      icon: getIcon('inventory'),
       category: 'inventory'
     },
     {
       id: 2,
       title: 'Disponibles',
-      value: String(dashboardData.inventoryAvailable),
+      value: String(dashboardData?.inventoryAvailable || '0'),
       subtitle: 'items disponibles',
-      icon: FiCheckCircle,
+      icon: getIcon('available'),
       category: 'available'
     },
     {
       id: 3,
       title: 'Préstamos Activos',
-      value: String(dashboardData.activeLoans),
+      value: String(dashboardData?.activeLoans || '0'),
       subtitle: 'en curso',
-      icon: FiClock,
+      icon: getIcon('loans'),
       category: 'loans'
     },
     {
       id: 4,
       title: 'No Devueltos',
-      value: String(dashboardData.activeLoans),
+      value: String(dashboardData?.pendingReturns || '0'),
       subtitle: 'pendientes',
-      icon: FiAlertTriangle,
+      icon: getIcon('pending'),
       category: 'pending'
     },
     {
       id: 5,
       title: 'Horarios',
-      value: String(dashboardData.schedulesCount),
+      value: String(dashboardData?.schedulesCount) || '0',
       subtitle: 'programados',
-      icon: FiCalendar,
+      icon: getIcon('returned'),
       category: 'returned'
     }
   ];
@@ -218,14 +156,14 @@ export default function Dashboard() {
         <h1 className="dashboard-title">Dashboard</h1>
         <p className="dashboard-subtitle">Bienvenido al panel de control de TecniStock</p>
         <div className="dashboard-time">
-          {currentTime.toLocaleTimeString('es-ES', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          })} - {currentTime.toLocaleDateString('es-ES', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          {currentTime.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit'
+          })} - {currentTime.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
           })}
         </div>
       </div>
@@ -255,7 +193,7 @@ export default function Dashboard() {
             <h2 className="section-title">Préstamos del Día</h2>
             <a href="#" className="section-link">Ver todos</a>
           </div>
-          
+
           <div className="loans-list">
             {todayLoans.map((loan) => (
               <div key={loan.id} className="loan-item">
@@ -280,7 +218,7 @@ export default function Dashboard() {
           <div className="section-header">
             <h2 className="section-title">Acciones Rápidas</h2>
           </div>
-          
+
           <div className="actions-grid">
             {quickActions.map((action) => {
               const IconComponent = action.icon;
@@ -306,21 +244,21 @@ export default function Dashboard() {
         <div className="section-header">
           <h2 className="section-title">Resumen de Actividad</h2>
         </div>
-        
-          <div className="activity-stats">
-            <div className="activity-stat">
+
+        <div className="activity-stats">
+          <div className="activity-stat">
             <div className="activity-stat-value">{activitySummary.weeklyLoansCount}</div>
-              <div className="activity-stat-label">Préstamos esta semana</div>
-            </div>
-            <div className="activity-stat">
-              <div className="activity-stat-value">{activitySummary.mostRequestedItemsCount}</div>
-              <div className="activity-stat-label">Items más solicitados</div>
-            </div>
-            <div className="activity-stat">
-              <div className="activity-stat-value">{activitySummary.activeProfessorsCount}</div>
-              <div className="activity-stat-label">Profesores activos</div>
-            </div>
+            <div className="activity-stat-label">Préstamos esta semana</div>
           </div>
+          <div className="activity-stat">
+            <div className="activity-stat-value">{activitySummary.mostRequestedItemsCount}</div>
+            <div className="activity-stat-label">Items más solicitados</div>
+          </div>
+          <div className="activity-stat">
+            <div className="activity-stat-value">{activitySummary.activeProfessorsCount}</div>
+            <div className="activity-stat-label">Profesores activos</div>
+          </div>
+        </div>
       </div>
     </div>
   );
