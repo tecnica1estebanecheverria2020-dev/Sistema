@@ -1,5 +1,5 @@
 // Rutas
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // Notificaciones
@@ -19,17 +19,27 @@ import EditorComunicado from './pages/Comunicados/EditorComunicado.jsx';
 import NotFound from './pages/NotFound/NotFound.jsx';
 import Users from './pages/Users/Users.jsx';
 import usePermisos from './shared/hooks/usePermisos.js';
+import { LoadingProvider } from './shared/contexts/LoadingContext.jsx';
+import useGlobalLoading from './shared/hooks/useGlobalLoading.jsx';
 
 // Provedor del usuario
 import { UserProvider } from './shared/contexts/UserContext.jsx';
 
 export default function App() {
+  // Componente local que consume el contexto y dibuja el loader global
+  const GlobalLoader = () => {
+    const { renderLoading } = useGlobalLoading();
+    return renderLoading();
+  };
   return (
     <Router>
-      <UserProvider>
-        <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
-        <AppRoutes/>
-      </UserProvider>
+      <LoadingProvider>
+        <UserProvider>
+          <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
+          <GlobalLoader />
+          <AppRoutes/>
+        </UserProvider>
+      </LoadingProvider>
     </Router>
   );
 }

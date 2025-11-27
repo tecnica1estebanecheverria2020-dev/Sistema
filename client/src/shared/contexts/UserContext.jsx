@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from './../api/axios';
+import useGlobalLoading from '../hooks/useGlobalLoading.jsx';
 
 export const UserContext = createContext();
 
@@ -8,12 +9,14 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { startAppLoading, stopAppLoading } = useGlobalLoading();
 
-  const checkSession = async () => {      
+  const checkSession = async () => {
     if (window.location.pathname === '/auth') return;
+
     try {
       const response = await axios.get('/auth/me');
-      
+
       if (response.data.success) {
         setUser(response.data.user);
       }
@@ -23,12 +26,18 @@ export const UserProvider = ({ children }) => {
       handleLogout();
     } finally {
       setLoading(false);
+      stopAppLoading();
     }
   };
 
   const handleLogin = (user) => {
     setUser(user);
     navigate('/');
+    startAppLoading();
+
+    setTimeout(() => {
+      stopAppLoading();
+    }, 1500);
   };
 
   const handleLogout = async () => {
@@ -47,9 +56,14 @@ export const UserProvider = ({ children }) => {
     checkSession();
   }, []);
 
+  useEffect(() => {
+    startAppLoading();
+  }, []);
+
   return (
     <UserContext.Provider value={{ user, handleLogin, handleLogout, loading, checkSession }}>
       {children}
     </UserContext.Provider>
   );
 };
+

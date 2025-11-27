@@ -2,6 +2,14 @@
   font-family: 'Urbanist';
   src: url('./assets/fonts/Urbanist.ttf');
 }
+
+:root {
+  --primary: #6b1426;
+  --primary-light: #8b1a33;
+  --primary-dark: #4a0e1a;
+  --primary-accent: #9d1e3a;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -14,8 +22,8 @@
   display: flex;
   width: 100%;
   height: 100%;
-  
-  background: #6b1426;
+
+  background: var(--primary);
 }
 
 /* Contenido principal */
@@ -23,14 +31,16 @@ main {
   flex: 1;
   min-height: 100vh;
   height: 100%;
-  margin-left: 0; /* Sin margen por defecto */
-  background:  #8b1538ca;
+  margin-left: 0;
+  /* Sin margen por defecto */
+  background: #8b1538ca;
   transition: margin-left 0.3s ease;
 }
 
 /* Aplicar margen solo cuando hay sidebar */
 .layout.with-sidebar main {
-  margin-left: 280px; /* Actualizado de 320px a 280px */
+  margin-left: 280px;
+  /* Actualizado de 320px a 280px */
 }
 
 .loading-icon-mini {
@@ -48,12 +58,14 @@ main {
 /* Media queries para responsive */
 @media (max-width: 1024px) {
   .layout.with-sidebar main {
-    margin-left: 280px; /* Actualizado de 320px a 280px */
+    margin-left: 280px;
+    /* Actualizado de 320px a 280px */
   }
 }
 
 @media (max-width: 768px) {
   .layout.with-sidebar main {
-    margin-left: 280px; /* Actualizado de 320px a 280px */
+    margin-left: 280px;
+    /* Actualizado de 320px a 280px */
   }
 }
