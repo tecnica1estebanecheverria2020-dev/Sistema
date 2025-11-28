@@ -56,9 +56,7 @@ export const UserProvider = ({ children }) => {
     checkSession();
   }, []);
 
-  useEffect(() => {
-    startAppLoading();
-  }, []);
+  
 
   return (
     <UserContext.Provider value={{ user, handleLogin, handleLogout, loading, checkSession }}>

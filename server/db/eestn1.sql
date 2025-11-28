@@ -1,71 +1,13 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Servidor: 127.0.0.1
--- Tiempo de generación: 26-11-2025 a las 21:09:50
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.0.30
-
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
---
--- Base de datos: `eestn1`
---
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `classroom`
---
+-- Crear tablas
 
 CREATE TABLE `classroom` (
   `id_classroom` int(11) NOT NULL,
   `name` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `classroom`
---
-
-INSERT INTO `classroom` (`id_classroom`, `name`) VALUES
-(1, 'AULA 1'),
-(10, 'AULA 10'),
-(11, 'AULA 11'),
-(12, 'AULA 12'),
-(13, 'AULA 13'),
-(14, 'AULA 14'),
-(15, 'AULA 15'),
-(16, 'AULA 16'),
-(17, 'AULA 17'),
-(18, 'AULA 18'),
-(19, 'AULA 19'),
-(2, 'AULA 2'),
-(20, 'AULA 20'),
-(21, 'AULA 21'),
-(3, 'AULA 3'),
-(4, 'AULA 4'),
-(5, 'AULA 5'),
-(6, 'AULA 6'),
-(7, 'AULA 7'),
-(8, 'AULA 8'),
-(9, 'AULA 9'),
-(23, 'LABORATORIO'),
-(22, 'TALLER GRANDE');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `comunicados`
---
 
 CREATE TABLE comunicados (
   id_comunicado INT AUTO_INCREMENT PRIMARY KEY,
@@ -81,10 +23,6 @@ CREATE TABLE comunicados (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
---
--- Estructura de tabla para la tabla `inventory`
---
-
 CREATE TABLE `inventory` (
   `id_inventory` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -96,24 +34,6 @@ CREATE TABLE `inventory` (
   `location` varchar(100) DEFAULT NULL,
   `description` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `inventory`
---
-
-INSERT INTO `inventory` (`id_inventory`, `name`, `code`, `category`, `amount`, `available`, `state`, `location`, `description`) VALUES
-(1, 'Martillo', '2', 'Herramienta', 5, 2, 'Disponible', 'Pañol', NULL),
-(2, 'Destornillador', 'DST-001', 'Herramienta', 10, 8, 'Disponible', 'Pañol', 'Juego de destornilladores'),
-(3, 'Taladro', 'TLR-045', 'Herramienta', 4, 3, 'Disponible', 'Pañol', 'Taladro percutor'),
-(4, 'Osciloscopio', 'OSC-200', 'Laboratorio', 2, 2, 'Disponible', 'Laboratorio', 'Osciloscopio digital'),
-(5, 'Net', 'ASFS', 'Computadoras', 2, 2, 'Mantenimiento', 'Atras', 'DEscriptcion'),
-(6, 'Multímetro', 'MLT-120', 'Laboratorio', 6, 5, 'Disponible', 'Laboratorio', 'Multímetro de precisión');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `loans`
---
 
 CREATE TABLE `loans` (
   `id_loan` int(11) NOT NULL,
@@ -128,47 +48,10 @@ CREATE TABLE `loans` (
   `observations_return` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `loans`
---
-
-INSERT INTO `loans` (`id_loan`, `id_user`, `id_inventory`, `quantity`, `applicant`, `date_loan`, `date_return`, `state`, `observations_loan`, `observations_return`) VALUES
-(1, 2, 1, 1, 'Ana García', '2025-11-25 17:14:11', NULL, 'activo', 'Préstamo para clase de taller', NULL),
-(2, 3, 4, 1, 'Carlos Pérez', '2025-11-25 17:14:11', NULL, 'activo', 'Mediciones en laboratorio', NULL),
-(3, 4, 6, 2, 'Lucía Gómez', '2025-11-25 17:14:11', NULL, 'activo', 'Clase práctica de electrónica', NULL),
-(4, 6, 2, 1, 'Sofía López', '2025-11-25 17:14:11', NULL, 'activo', 'Ajustes en aula', NULL),
-(5, 7, 3, 1, 'Diego Sánchez', '2025-11-25 17:14:11', NULL, 'activo', 'Montaje en taller', NULL);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `roles`
---
-
 CREATE TABLE `roles` (
   `id_role` int(11) NOT NULL,
   `name` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `roles`
---
-
-INSERT INTO `roles` (`id_role`, `name`) VALUES
-(1, 'EMTP Server'),
-(2, 'EMTP Pañol'),
-(3, 'EMPT Laboratorio'),
-(4, 'Bibliotecario'),
-(5, 'Profesor'),
-(6, 'Jefe_Area'),
-(7, 'Directivo'),
-(8, 'Admin');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `schedules`
---
 
 CREATE TABLE `schedules` (
   `id_schedule` int(11) NOT NULL,
@@ -181,9 +64,91 @@ CREATE TABLE `schedules` (
   `shift` enum('Mañana','Tarde') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `schedules`
---
+CREATE TABLE `subject` (
+  `id_subject` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `subject_user` (
+  `id_subject_user` int(11) NOT NULL,
+  `id_subject` int(11) NOT NULL,
+  `id_user` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `users` (
+  `id_user` int(11) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `lock_until` datetime DEFAULT NULL,
+  `failed_attempts` int(11) DEFAULT 0,
+  `active` tinyint(1) DEFAULT 1,
+  `tel` varchar(11) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `users_roles` (
+  `id_user_roles` int(11) NOT NULL,
+  `id_user` int(11) NOT NULL,
+  `id_role` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `workshop_group` (
+  `id_workshop_group` int(11) NOT NULL,
+  `name` varchar(10) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Volcado de datos
+
+INSERT INTO `classroom` (`id_classroom`, `name`) VALUES
+(1, 'Aula 1'),
+(2, 'Aula 2'),
+(3, 'Aula 3'),
+(4, 'Aula 4'),
+(5, 'Aula 5'),
+(6, 'Aula 6'),
+(7, 'Aula 7'),
+(8, 'Aula 8'),
+(9, 'Aula 9'),
+(10, 'Aula 10'),
+(11, 'Aula 11'),
+(12, 'Aula 12'),
+(13, 'Aula 13'),
+(14, 'Aula 14'),
+(15, 'Aula 15'),
+(16, 'Aula 16'),
+(17, 'Aula 17'),
+(18, 'Aula 18'),
+(19, 'Aula 19'),
+(20, 'Aula 20'),
+(21, 'Aula 21'),
+(23, 'Laboratorio'),
+(22, 'Taller grande');
+
+INSERT INTO `inventory` (`id_inventory`, `name`, `code`, `category`, `amount`, `available`, `state`, `location`, `description`) VALUES
+(1, 'Computadora', 'PC-001', 'Computadoras', 20, 18, 'Disponible', 'Laboratorio de Informática', 'PC de escritorio'),
+(2, 'Mouse', 'MOU-001', 'Perifericos', 50, 45, 'Disponible', 'Pañol', 'Mouse óptico USB'),
+(3, 'Teclado', 'KEY-001', 'Perifericos', 40, 35, 'Disponible', 'Pañol', 'Teclado estándar USB'),
+(4, 'Proyector', 'PRJ-001', 'Audiovisual', 3, 2, 'Disponible', 'Aula', 'Proyector multimedia'),
+(5, 'Laptop', 'LAP-001', 'Computadoras', 10, 8, 'Mantenimiento', 'Laboratorio de Informática', 'Notebook para prácticas'),
+(6, 'Monitor', 'MON-001', 'Perifericos', 10, 9, 'Disponible', 'Pañol', 'Monitor LED 24"');
+
+INSERT INTO `loans` (`id_loan`, `id_user`, `id_inventory`, `quantity`, `applicant`, `date_loan`, `date_return`, `state`, `observations_loan`, `observations_return`) VALUES
+(1, 2, 1, 1, 'Ana García', '2025-11-25 17:14:11', NULL, 'activo', 'Préstamo para clase de taller', NULL),
+(2, 3, 4, 1, 'Carlos Pérez', '2025-11-25 17:14:11', NULL, 'activo', 'Mediciones en laboratorio', NULL),
+(3, 4, 6, 2, 'Lucía Gómez', '2025-11-25 17:14:11', NULL, 'activo', 'Clase práctica de electrónica', NULL),
+(4, 6, 2, 1, 'Sofía López', '2025-11-25 17:14:11', NULL, 'activo', 'Ajustes en aula', NULL),
+(5, 7, 3, 1, 'Diego Sánchez', '2025-11-25 17:14:11', NULL, 'activo', 'Montaje en taller', NULL);
+
+INSERT INTO `roles` (`id_role`, `name`) VALUES
+(1, 'EMTP Server'),
+(2, 'EMTP Pañol'),
+(3, 'EMPT Laboratorio'),
+(4, 'Bibliotecario'),
+(5, 'Profesor'),
+(6, 'Jefe_Area'),
+(7, 'Directivo'),
+(8, 'Admin');
 
 INSERT INTO `schedules` (`id_schedule`, `id_classroom`, `id_workshop_group`, `id_subject_user`, `day_of_week`, `start_time`, `end_time`, `shift`) VALUES
 (1, 1, 1, 7, 'Monday', '07:00:00', '09:00:00', 'Mañana'),
@@ -199,44 +164,14 @@ INSERT INTO `schedules` (`id_schedule`, `id_classroom`, `id_workshop_group`, `id
 (3, 23, 11, 9, 'Tuesday', '13:00:00', '15:30:00', 'Tarde'),
 (12, 23, 29, 20, 'Friday', '13:00:00', '15:30:00', 'Tarde');
 
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `subject`
---
-
-CREATE TABLE `subject` (
-  `id_subject` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `subject`
---
-
 INSERT INTO `subject` (`id_subject`, `name`) VALUES
-(1, 'Matemáticas'),
-(2, 'Física'),
-(3, 'Química'),
-(4, 'Biología'),
-(5, 'Historia'),
-(6, 'Programacion');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `subject_user`
---
-
-CREATE TABLE `subject_user` (
-  `id_subject_user` int(11) NOT NULL,
-  `id_subject` int(11) NOT NULL,
-  `id_user` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `subject_user`
---
+(1, 'Programación 1'),
+(2, 'Programación 2'),
+(3, 'Programación 3'),
+(4, 'Modelos y Sistemas'),
+(5, 'Base de Datos'),
+(6, 'Sistemas Operativos'),
+(7, 'Diseño Web');
 
 INSERT INTO `subject_user` (`id_subject_user`, `id_subject`, `id_user`) VALUES
 (1, 1, 1),
@@ -260,56 +195,19 @@ INSERT INTO `subject_user` (`id_subject_user`, `id_subject`, `id_user`) VALUES
 (19, 1, 8),
 (20, 6, 8);
 
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `users`
---
-
-CREATE TABLE `users` (
-  `id_user` int(11) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `lock_until` datetime DEFAULT NULL,
-  `failed_attempts` int(11) DEFAULT 0,
-  `active` tinyint(1) DEFAULT 1,
-  `tel` varchar(11) DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `users`
---
-
 INSERT INTO `users` (`id_user`, `email`, `name`, `password`, `lock_until`, `failed_attempts`, `active`, `tel`, `created_at`) VALUES
 (1, 'admin@radiopad.com', 'Cuenta Admin', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '1234567890', '2025-10-30 22:47:28'),
-(2, 'ana.garcia@escuela.com', 'Ana García', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '111222333', '2025-11-25 17:14:11'),
-(3, 'carlos.perez@escuela.com', 'Carlos Pérez', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 0, '222333444', '2025-11-25 17:14:11'),
-(4, 'lucia.gomez@escuela.com', 'Lucía Gómez', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '333444555', '2025-11-25 17:14:11'),
-(5, 'martin.rodriguez@escuela.com', 'Martín Rodríguez', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '444555666', '2025-11-25 17:14:11'),
-(6, 'sofia.lopez@escuela.com', 'Sofía López', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 0, '555666777', '2025-11-25 17:14:11'),
-(7, 'diego.sanchez@escuela.com.ar', 'Diego Sánchez', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '666777888', '2025-11-25 17:14:11'),
-(8, 'valentina.ramos@escuela.com', 'Valentina Ramos', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '777888999', '2025-11-25 17:14:11'),
+(2, 'celeste.basterra@escuela.com', 'Basterra Celeste', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '111222333', '2025-11-25 17:14:11'),
+(3, 'pablo.gareis@escuela.com', 'Gareis Pablo', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '222333444', '2025-11-25 17:14:11'),
+(4, 'maciel.avalos@escuela.com', 'Avalos Maciel', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '333444555', '2025-11-25 17:14:11'),
+(5, 'callamullo@escuela.com', 'Callamullo', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '444555666', '2025-11-25 17:14:11'),
+(6, 'lautaro.aragon@escuela.com', 'Lautaro Aragon', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '555666777', '2025-11-25 17:14:11'),
+(7, 'teresita.salazar@escuela.com', 'Teresita Salazar', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '666777888', '2025-11-25 17:14:11'),
+(8, 'vanesa@escuela.com', 'Vanesa', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '777888999', '2025-11-25 17:14:11'),
 (11, 'juan@gmail.com', 'Juan', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '1111111111', '2025-11-26 13:55:58'),
-(12, 'mateo@gmail.com', 'Mateo', '$2b$10$es0LY4Gri6SN2McDspgEAON449kXNii67eXapqlGiKp9bCrO800ze', NULL, 0, 1, '12344321', '2025-11-26 14:54:12'),
-(13, 'tttt@gmail.com', 'Thiago', '$2b$10$/GiDQjeXfO4xbfv0nbrnweOxYotFcSIMDmm2UI4elpf63AMHGrrg.', NULL, 0, 1, '1234321', '2025-11-26 16:15:18');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `users_roles`
---
-
-CREATE TABLE `users_roles` (
-  `id_user_roles` int(11) NOT NULL,
-  `id_user` int(11) NOT NULL,
-  `id_role` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `users_roles`
---
+(12, 'mateo@gmail.com', 'Mateo', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '12344321', '2025-11-26 14:54:12'),
+(13, 'tttt@gmail.com', 'Thiago', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '1234321', '2025-11-26 16:15:18'),
+(15, 'daniela.monje@escuela.com', 'Monje Daniela', '$2b$10$KwKPKY1456nonu57JGJha.v.tFQ.A8KaMJOWMq1MR90doGXnuBSgy', NULL, 0, 1, '999888777', '2025-11-26 16:15:18');
 
 INSERT INTO `users_roles` (`id_user_roles`, `id_user`, `id_role`) VALUES
 (8, 2, 5),
@@ -317,7 +215,7 @@ INSERT INTO `users_roles` (`id_user_roles`, `id_user`, `id_role`) VALUES
 (10, 4, 5),
 (11, 5, 5),
 (12, 6, 5),
-(14, 8, 5),
+(14, 8, 1),
 (15, 11, 8),
 (16, 12, 8),
 (17, 12, 4),
@@ -325,22 +223,9 @@ INSERT INTO `users_roles` (`id_user_roles`, `id_user`, `id_role`) VALUES
 (19, 12, 5),
 (24, 13, 6),
 (25, 13, 1),
-(26, 1, 8);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `workshop_group`
---
-
-CREATE TABLE `workshop_group` (
-  `id_workshop_group` int(11) NOT NULL,
-  `name` varchar(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `workshop_group`
---
+(26, 1, 8),
+(27, 7, 5),
+(28, 15, 6);
 
 INSERT INTO `workshop_group` (`id_workshop_group`, `name`) VALUES
 (1, '1.1'),
@@ -381,40 +266,21 @@ INSERT INTO `workshop_group` (`id_workshop_group`, `name`) VALUES
 (36, '7.4'),
 (37, '7.5');
 
---
--- Índices para tablas volcadas
---
-
---
--- Indices de la tabla `classroom`
---
 ALTER TABLE `classroom`
   ADD PRIMARY KEY (`id_classroom`),
   ADD UNIQUE KEY `uq_classroom_name` (`name`);
 
---
--- Indices de la tabla `inventory`
---
 ALTER TABLE `inventory`
   ADD PRIMARY KEY (`id_inventory`);
 
---
--- Indices de la tabla `loans`
---
 ALTER TABLE `loans`
   ADD PRIMARY KEY (`id_loan`),
   ADD KEY `id_user` (`id_user`),
   ADD KEY `id_inventory` (`id_inventory`);
 
---
--- Indices de la tabla `roles`
---
 ALTER TABLE `roles`
   ADD PRIMARY KEY (`id_role`);
 
---
--- Indices de la tabla `schedules`
---
 ALTER TABLE `schedules`
   ADD PRIMARY KEY (`id_schedule`),
   ADD UNIQUE KEY `uq_schedules_composite` (`id_classroom`,`id_workshop_group`,`id_subject_user`,`day_of_week`,`start_time`,`end_time`,`shift`),
@@ -422,140 +288,72 @@ ALTER TABLE `schedules`
   ADD KEY `id_workshop_group` (`id_workshop_group`),
   ADD KEY `id_subject_user` (`id_subject_user`);
 
---
--- Indices de la tabla `subject`
---
 ALTER TABLE `subject`
   ADD PRIMARY KEY (`id_subject`);
 
---
--- Indices de la tabla `subject_user`
---
 ALTER TABLE `subject_user`
   ADD PRIMARY KEY (`id_subject_user`),
   ADD KEY `id_subject` (`id_subject`),
   ADD KEY `id_user` (`id_user`);
 
---
--- Indices de la tabla `users`
---
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id_user`),
   ADD UNIQUE KEY `email` (`email`);
 
---
--- Indices de la tabla `users_roles`
---
 ALTER TABLE `users_roles`
   ADD PRIMARY KEY (`id_user_roles`),
   ADD KEY `id_user` (`id_user`),
   ADD KEY `id_role` (`id_role`);
 
---
--- Indices de la tabla `workshop_group`
---
 ALTER TABLE `workshop_group`
   ADD PRIMARY KEY (`id_workshop_group`),
   ADD UNIQUE KEY `uq_workshop_group_name` (`name`);
 
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `classroom`
---
 ALTER TABLE `classroom`
   MODIFY `id_classroom` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
---
--- AUTO_INCREMENT de la tabla `inventory`
---
 ALTER TABLE `inventory`
   MODIFY `id_inventory` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
---
--- AUTO_INCREMENT de la tabla `loans`
---
 ALTER TABLE `loans`
   MODIFY `id_loan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
---
--- AUTO_INCREMENT de la tabla `roles`
---
 ALTER TABLE `roles`
   MODIFY `id_role` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
---
--- AUTO_INCREMENT de la tabla `schedules`
---
 ALTER TABLE `schedules`
   MODIFY `id_schedule` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
---
--- AUTO_INCREMENT de la tabla `subject`
---
 ALTER TABLE `subject`
   MODIFY `id_subject` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
---
--- AUTO_INCREMENT de la tabla `subject_user`
---
 ALTER TABLE `subject_user`
   MODIFY `id_subject_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
---
--- AUTO_INCREMENT de la tabla `users`
---
 ALTER TABLE `users`
-  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
---
--- AUTO_INCREMENT de la tabla `users_roles`
---
 ALTER TABLE `users_roles`
-  MODIFY `id_user_roles` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id_user_roles` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
---
--- AUTO_INCREMENT de la tabla `workshop_group`
---
 ALTER TABLE `workshop_group`
   MODIFY `id_workshop_group` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
---
--- Restricciones para tablas volcadas
---
-
---
--- Filtros para la tabla `loans`
---
 ALTER TABLE `loans`
   ADD CONSTRAINT `loans_ibfk_1` FOREIGN KEY (`id_user`) REFERENCES `users` (`id_user`),
   ADD CONSTRAINT `loans_ibfk_2` FOREIGN KEY (`id_inventory`) REFERENCES `inventory` (`id_inventory`) ON DELETE CASCADE ON UPDATE CASCADE;
 
---
--- Filtros para la tabla `schedules`
---
 ALTER TABLE `schedules`
   ADD CONSTRAINT `schedules_fk_classroom` FOREIGN KEY (`id_classroom`) REFERENCES `classroom` (`id_classroom`) ON UPDATE CASCADE,
   ADD CONSTRAINT `schedules_fk_subject_user` FOREIGN KEY (`id_subject_user`) REFERENCES `subject_user` (`id_subject_user`) ON UPDATE CASCADE,
   ADD CONSTRAINT `schedules_fk_workshop_group` FOREIGN KEY (`id_workshop_group`) REFERENCES `workshop_group` (`id_workshop_group`) ON UPDATE CASCADE;
 
---
--- Filtros para la tabla `subject_user`
---
 ALTER TABLE `subject_user`
   ADD CONSTRAINT `subject_user_fk_subject` FOREIGN KEY (`id_subject`) REFERENCES `subject` (`id_subject`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `subject_user_fk_user` FOREIGN KEY (`id_user`) REFERENCES `users` (`id_user`) ON DELETE CASCADE ON UPDATE CASCADE;
 
---
--- Filtros para la tabla `users_roles`
---
 ALTER TABLE `users_roles`
   ADD CONSTRAINT `users_roles_ibfk_1` FOREIGN KEY (`id_user`) REFERENCES `users` (`id_user`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `users_roles_ibfk_2` FOREIGN KEY (`id_role`) REFERENCES `roles` (`id_role`) ON DELETE CASCADE ON UPDATE CASCADE;
-COMMIT;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+COMMIT;

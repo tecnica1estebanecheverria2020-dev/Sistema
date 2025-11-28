@@ -21,6 +21,7 @@ import Users from './pages/Users/Users.jsx';
 import usePermisos from './shared/hooks/usePermisos.js';
 import { LoadingProvider } from './shared/contexts/LoadingContext.jsx';
 import useGlobalLoading from './shared/hooks/useGlobalLoading.jsx';
+import useAuth from './shared/hooks/useAuth.js';
 
 // Provedor del usuario
 import { UserProvider } from './shared/contexts/UserContext.jsx';
@@ -29,6 +30,8 @@ export default function App() {
   // Componente local que consume el contexto y dibuja el loader global
   const GlobalLoader = () => {
     const { renderLoading } = useGlobalLoading();
+    const { user } = useAuth();
+    if (!user) return null;
     return renderLoading();
   };
   return (
