@@ -43,6 +43,30 @@ class DashboardController {
       return handleError(res, err);
     }
   };
+
+  getMostRequestedItems = async (req, res) => {
+    try {
+      const items = await this.DashboardService.getMostRequestedItems();
+      res.status(200).json({
+        success: true,
+        data: items
+      });
+    } catch (err) {
+      return handleError(res, err);
+    }
+  };
+
+  getLoansByTime = async (req, res) => {
+    try {
+      const data = await this.DashboardService.getLoansByTimeOfDay();
+      res.status(200).json({
+        success: true,
+        data
+      });
+    } catch (err) {
+      return handleError(res, err);
+    }
+  };
 }
 
 export default DashboardController;

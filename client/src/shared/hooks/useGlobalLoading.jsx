@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useLoadingContext } from '../contexts/LoadingContext.jsx';
 import AppLoading from '../components/AppLoading/AppLoading.jsx';
-import SectionLoading from '../components/SectionLoading/SectionLoading.jsx';
 
 export default function useGlobalLoading() {
   const ctx = useLoadingContext();
@@ -12,13 +11,13 @@ export default function useGlobalLoading() {
   const isAppLoading = isLoading && type === 'app';
   const isSectionLoading = isLoading && type === 'section';
 
-  // Decide el componente de carga adecuado
+  // Decide el componente de carga adecuado - solo AppLoading
   const LoadingComponent = useMemo(() => {
     if (!isLoading) return null;
     if (isAppLoading) return AppLoading;
-    if (isSectionLoading) return SectionLoading;
+    // No mostrar SectionLoading
     return null;
-  }, [isLoading, isAppLoading, isSectionLoading]);
+  }, [isLoading, isAppLoading]);
 
   const renderLoading = () => {
     if (!LoadingComponent) return null;

@@ -1,4 +1,5 @@
-import { FiUser, FiX } from "react-icons/fi";
+import { FiUser, FiX, FiSave } from "react-icons/fi";
+import Modal from "../../shared/components/Modal/Modal";
 
 export default function ModalUser({
     setIsModalOpen,
@@ -11,33 +12,37 @@ export default function ModalUser({
     rolesError,
     onToggleRole,
 }) {
+    const onSubmit = (e) => {
+        e.preventDefault();
+        handleSubmit(e);
+    };
+
+    const footer = (
+        <>
+            <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="modal-btn modal-btn-secondary"
+            >
+                <FiX />
+                Cancelar
+            </button>
+            <button type="submit" form="user-form" className="modal-btn modal-btn-primary">
+                <FiSave />
+                {editingUser ? 'Actualizar' : 'Agregar'} usuario
+            </button>
+        </>
+    );
 
     return (
-        <div className="config-modal-overlay" onClick={() => setIsModalOpen(false)}>
-            <div className="config-modal-container" onClick={(e) => e.stopPropagation()}>
-                <div className="config-modal-header">
-                    <div className="config-modal-header-content">
-                        <div className="config-modal-icon">
-                            <FiUser />
-                        </div>
-                        <div className="config-modal-header-text">
-                            <h3 className="config-modal-title">
-                                {editingUser ? 'Editar usuario' : 'Agregar usuario'}
-                            </h3>
-                            <p className="config-modal-subtitle">
-                                {editingUser ? 'Modifica los datos del usuario' : 'Completa la información del nuevo usuario'}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setIsModalOpen(false)}
-                        className="config-close-button"
-                    >
-                        <FiX />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="config-modal-form">
+        <Modal
+            isOpen={true}
+            onClose={() => setIsModalOpen(false)}
+            title={editingUser ? 'Editar Usuario' : 'Agregar Usuario'}
+            icon={FiUser}
+            footer={footer}
+        >
+            <form id="user-form" onSubmit={onSubmit} className="config-modal-form">
                     <div className="config-form-grid">
                         <div className="config-form-group">
                             <label className="config-form-label">name</label>
@@ -138,21 +143,7 @@ export default function ModalUser({
                             </div>
                         )}
                     </div>
-
-                    <div className="config-modal-actions">
-                        <button
-                            type="button"
-                            onClick={() => setIsModalOpen(false)}
-                            className="config-cancel-button"
-                        >
-                            Cancelar
-                        </button>
-                        <button type="submit" className="config-submit-button">
-                            {editingUser ? 'Actualizar' : 'Agregar'} usuario
-                        </button>
-                    </div>
                 </form>
-            </div>
-        </div>
+        </Modal>
     )
 };

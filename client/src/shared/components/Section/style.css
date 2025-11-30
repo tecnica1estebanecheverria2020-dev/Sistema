@@ -1,0 +1,127 @@
+.section-container {
+  padding: 1.5rem;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #fafafa;
+  font-family: 'Urbanist', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
+}
+
+/* Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.section-header-content {
+  flex: 1;
+  min-width: 200px;
+}
+
+.section-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-title-icon {
+  font-size: 1.8rem;
+  color: #6b1426;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  font-family: 'Urbanist', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.section-subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+  font-weight: 400;
+}
+
+.section-add-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #6b1426 0%, #8b1a33 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(107, 20, 38, 0.2);
+  font-family: 'Urbanist', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.section-add-button:hover {
+  background: linear-gradient(135deg, #8b1a33 0%, #6b1426 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(107, 20, 38, 0.3);
+}
+
+.section-add-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(107, 20, 38, 0.2);
+}
+
+.section-add-icon {
+  font-size: 1.2rem;
+}
+
+.section-content {
+  width: 100%;
+}
+
+/* Media queries para responsive */
+@media (max-width: 768px) {
+  .section-container {
+    padding: 1rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+  }
+
+  .section-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .section-add-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-container {
+    padding: 0.75rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .section-add-button {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}

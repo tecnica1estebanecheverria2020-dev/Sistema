@@ -1,15 +1,31 @@
-import { FiTrash2 } from 'react-icons/fi';
+import { FiTrash2, FiX } from 'react-icons/fi';
+import Modal from '../../shared/components/Modal/Modal';
 
 export default function ConfirmDeleteModal({ isOpen, schedule, onCancel, onConfirm }) {
   if (!isOpen) return null;
+
+  const footer = (
+    <>
+      <button type="button" onClick={onCancel} className="modal-btn modal-btn-secondary">
+        <FiX />
+        Cancelar
+      </button>
+      <button type="button" onClick={onConfirm} className="modal-btn modal-btn-danger">
+        <FiTrash2 />
+        Eliminar
+      </button>
+    </>
+  );
+
   return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <div className="modal-header">
-          <FiTrash2 className="modal-icon" />
-          <h3>Eliminar Horario</h3>
-        </div>
-        <div className="modal-body">
+    <Modal
+      isOpen={true}
+      onClose={onCancel}
+      title="Eliminar Horario"
+      icon={FiTrash2}
+      footer={footer}
+    >
+      <div className="modal-body">
           <p>
             ¿Querés eliminar este horario?
           </p>
@@ -23,11 +39,6 @@ export default function ConfirmDeleteModal({ isOpen, schedule, onCancel, onConfi
             </div>
           )}
         </div>
-        <div className="modal-actions">
-          <button type="button" className="btn cancel" onClick={onCancel}>Cancelar</button>
-          <button type="button" className="btn danger" onClick={onConfirm}>Eliminar</button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

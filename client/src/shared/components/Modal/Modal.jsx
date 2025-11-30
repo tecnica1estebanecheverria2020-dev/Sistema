@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { FiX } from 'react-icons/fi';
+import './style.css';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, footer, icon: Icon }) => {
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === 'Escape') {
@@ -23,34 +25,42 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4 text-center">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose} />
-        
-        <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-          <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-            <div className="sm:flex sm:items-start">
-              <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium leading-6 text-gray-900">
-                    {title}
-                  </h3>
-                  <button
-                    type="button"
-                    className="rounded-md bg-white text-gray-400 hover:text-gray-500"
-                    onClick={onClose}
-                  >
-                    <span className="sr-only">Cerrar</span>
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                {children}
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-container"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header Fijo */}
+        <div className="modal-header">
+          <div className="modal-header-content">
+            {Icon && (
+              <div className="modal-icon-wrapper">
+                <Icon className="modal-icon" />
               </div>
-            </div>
+            )}
+            <h2 className="modal-title">{title}</h2>
           </div>
+          <button
+            type="button"
+            className="modal-close-btn"
+            onClick={onClose}
+            aria-label="Cerrar modal"
+          >
+            <FiX />
+          </button>
         </div>
+
+        {/* Contenido con Scroll */}
+        <div className="modal-content">
+          {children}
+        </div>
+
+        {/* Footer Fijo (si existe) */}
+        {footer && (
+          <div className="modal-footer">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -61,6 +71,8 @@ Modal.propTypes = {
   onClose: PropTypes.func.isRequired,
   title: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
+  footer: PropTypes.node,
+  icon: PropTypes.elementType,
 };
 
 export default Modal;

@@ -7,10 +7,27 @@ import {
   FiAlertTriangle,
   FiCalendar,
   FiPlus,
-  FiLoader
+  FiLoader,
+  FiGrid,
+  FiTrendingUp,
+  FiActivity
 } from 'react-icons/fi';
 import { FaBox, FaLayerGroup } from 'react-icons/fa';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell
+} from 'recharts';
 import useData from './hooks/useData';
+import Section from '../../shared/components/Section/Section.jsx';
 
 // Mini icono de carga
 const loadingIcon = () => {
@@ -25,14 +42,22 @@ export default function Dashboard() {
     fetchData,
     fetchTodayLoans,
     fetchActivitySummary,
-    dashboardData, todayLoans, activitySummary,
+    fetchMostRequestedItems,
+    fetchLoansByTime,
+    dashboardData,
+    todayLoans,
+    activitySummary,
+    mostRequestedItems,
+    loansByTime,
     loading,
   } = useData();
 
-  const getAllData = async () => {
-    await fetchData();
-    await fetchTodayLoans();
-    await fetchActivitySummary();
+  const getAllData = async (background = false) => {
+    await fetchData(background);
+    await fetchTodayLoans(background);
+    await fetchActivitySummary(background);
+    await fetchMostRequestedItems(background);
+    await fetchLoansByTime(background);
   }
 
   const getIcon = (category) => {
@@ -70,7 +95,7 @@ export default function Dashboard() {
   // Actualizar cada 5 segundos (datos del dashboard y estado de API)
   useEffect(() => {
     const interval = setInterval(() => {
-      getAllData();
+      getAllData(true);
     }, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -150,11 +175,12 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="dashboard-container">
-      {/* Header */}
-      <div className="dashboard-header">
-        <h1 className="dashboard-title">Dashboard</h1>
-        <p className="dashboard-subtitle">Bienvenido al panel de control de TecniStock</p>
+    <Section
+      title="Dashboard"
+      subtitle="Bienvenido al panel de control de TecniStock"
+      icon={FiGrid}
+      showAddButton={false}
+      headerAction={
         <div className="dashboard-time">
           {currentTime.toLocaleTimeString('es-ES', {
             hour: '2-digit',
@@ -166,7 +192,8 @@ export default function Dashboard() {
             day: 'numeric'
           })}
         </div>
-      </div>
+      }
+    >
 
       {/* Stats Cards */}
       <div className="stats-grid">
@@ -175,11 +202,15 @@ export default function Dashboard() {
           return (
             <div key={card.id} className={`stat-card ${card.category}`}>
               <div className="stat-header">
-                <span className="stat-title">{card.title}</span>
-                <IconComponent className="stat-icon" />
+                <div className="stat-icon-wrapper">
+                  <IconComponent className="stat-icon" />
+                </div>
               </div>
-              <h3 className="stat-value">{card.value}</h3>
-              <p className="stat-label">{card.subtitle}</p>
+              <div className="stat-body">
+                <h3 className="stat-value">{card.value}</h3>
+                <span className="stat-title">{card.title}</span>
+                <p className="stat-label">{card.subtitle}</p>
+              </div>
             </div>
           );
         })}
@@ -223,16 +254,19 @@ export default function Dashboard() {
             {quickActions.map((action) => {
               const IconComponent = action.icon;
               return (
-                <a
+                <button
                   key={action.id}
-                  href="#"
                   className="action-card"
-                  onClick={(e) => { e.preventDefault(); action.action(); }}
+                  onClick={action.action}
                 >
-                  <IconComponent className="action-icon" />
-                  <h4 className="action-title">{action.title}</h4>
-                  <p className="action-subtitle">{action.subtitle}</p>
-                </a>
+                  <div className="action-icon-wrapper">
+                    <IconComponent className="action-icon" />
+                  </div>
+                  <div className="action-content">
+                    <h4 className="action-title">{action.title}</h4>
+                    <p className="action-subtitle">{action.subtitle}</p>
+                  </div>
+                </button>
               );
             })}
           </div>
@@ -260,6 +294,117 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Charts Section */}
+      <div className="charts-grid">
+        {/* Most Requested Items Chart */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <div className="chart-title-wrapper">
+              <FiTrendingUp className="chart-icon" />
+              <h3 className="chart-title">Ítems Más Solicitados</h3>
+            </div>
+            <span className="chart-badge">Top 10</span>
+          </div>
+          <div className="chart-container">
+            {mostRequestedItems.length === 0 ? (
+              <div className="no-chart-data">
+                <FiTrendingUp className="no-data-icon" />
+                <p>No hay datos disponibles</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={mostRequestedItems} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="item_name"
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    tick={{ fill: '#64748b', fontSize: 11 }}
+                  />
+                  <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      padding: '12px'
+                    }}
+                    labelStyle={{ color: '#1e293b', fontWeight: 600, marginBottom: '4px' }}
+                    itemStyle={{ color: '#64748b', fontSize: '13px' }}
+                  />
+                  <Bar dataKey="total_loans" name="Préstamos" radius={[8, 8, 0, 0]}>
+                    {mostRequestedItems.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={`hsl(${350 - index * 5}, ${70 + index * 2}%, ${45 + index * 3}%)`}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* Loans by Time Chart */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <div className="chart-title-wrapper">
+              <FiActivity className="chart-icon" />
+              <h3 className="chart-title">Préstamos por Hora del Día</h3>
+            </div>
+            <span className="chart-badge">Últimos 30 días</span>
+          </div>
+          <div className="chart-container">
+            {loansByTime.length === 0 ? (
+              <div className="no-chart-data">
+                <FiActivity className="no-data-icon" />
+                <p>No hay datos disponibles</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={loansByTime} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="hour"
+                    tick={{ fill: '#64748b', fontSize: 12 }}
+                    label={{ value: 'Hora del día', position: 'insideBottom', offset: -10, fill: '#64748b' }}
+                  />
+                  <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      padding: '12px'
+                    }}
+                    labelStyle={{ color: '#1e293b', fontWeight: 600, marginBottom: '4px' }}
+                    itemStyle={{ color: '#64748b', fontSize: '13px' }}
+                    labelFormatter={(value) => `Hora: ${value}:00`}
+                  />
+                  <Legend
+                    wrapperStyle={{ paddingTop: '20px' }}
+                    iconType="circle"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    name="Préstamos"
+                    stroke="#dc2626"
+                    strokeWidth={3}
+                    dot={{ fill: '#dc2626', r: 5 }}
+                    activeDot={{ r: 7, fill: '#b91c1c' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
+    </Section>
   );
 }

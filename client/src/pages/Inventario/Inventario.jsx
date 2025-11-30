@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiPackage, FiFilter, FiBox, FiChevronDown } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiPackage, FiFilter, FiBox, FiChevronDown, FiLoader } from 'react-icons/fi';
 import './style.css';
 import { useInventario } from '../../shared/hooks/useInventario';
 import ModalProduct from './ModalProduct';
 import CustomSelect from './CustomSelect';
+import Section from '../../shared/components/Section/Section.jsx';
+import DataTable from '../../shared/components/DataTable/DataTable.jsx';
 
 const Inventario = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -136,49 +138,71 @@ const Inventario = () => {
     }
   };
 
+  // Componente de acciones para DataTable
+  const InventoryActions = ({ row }) => (
+    <div className="inventory-actions-container">
+      <button
+        onClick={() => handleEdit(row)}
+        className="inventory-action-button inventory-edit-button"
+        title="Editar"
+      >
+        <FiEdit2 />
+      </button>
+      <button
+        onClick={() => handleDelete(row)}
+        className="inventory-action-button inventory-delete-button"
+        title="Eliminar"
+      >
+        <FiTrash2 />
+      </button>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="inventory-container">
-        <div className="loading-state">
-          <FiPackage className="loading-icon" />
-          <p>Cargando inventario...</p>
+      <Section
+        title="Inventario"
+        subtitle="Administración de ítems del servidor"
+        icon={FiPackage}
+        showAddButton={false}
+      >
+        <div className="inventory-loading-state">
+          <div className="inventory-spinner-wrapper">
+            <FiLoader className="inventory-spinner" />
+          </div>
+          <p className="inventory-loading-text">Cargando inventario...</p>
         </div>
-      </div>
+      </Section>
     );
   }
 
   if (error) {
     return (
-      <div className="inventory-container">
-        <div className="error-state">
+      <Section
+        title="Inventario"
+        subtitle="Administración de ítems del servidor"
+        icon={FiPackage}
+        showAddButton={false}
+      >
+        <div className="inventory-error-state">
           <p>Error: {error}</p>
         </div>
-      </div>
+      </Section>
     );
   }
 
   return (
-    <div className="inventory-container">
-      {/* Header */}
-      <div className="inventory-header">
-        <div className="header-content">
-          <div className="header-text">
-            <h1 className="inventory-title">Inventario</h1>
-            <p className="inventory-subtitle">Administración de ítems del servidor</p>
-          </div>
-          <button
-            onClick={() => {
-              setCurrentItem(null);
-              resetForm();
-              setIsModalOpen(true);
-            }}
-            className="inventory-add-button"
-          >
-            <FiPlus className="inventory-add-icon" />
-            Agregar Ítem
-          </button>
-        </div>
-      </div>
+    <Section
+      title="Inventario"
+      subtitle="Administración de ítems del servidor"
+      icon={FiPackage}
+      onAdd={() => {
+        setCurrentItem(null);
+        resetForm();
+        setIsModalOpen(true);
+      }}
+      addButtonText="Agregar Ítem"
+    >
 
       {/* Filters */}
       <div className="inventory-filters">
@@ -257,8 +281,67 @@ const Inventario = () => {
       </div>
 
       {/* Inventory Table */}
-      <div className="inventory-table-container">
-        {filteredItems.length === 0 ? (
+      <DataTable
+        data={filteredItems}
+        columns={[
+          {
+            key: 'code',
+            label: 'Código',
+            type: 'string',
+            render: (value) => <span className="inventory-code-text">{value}</span>
+          },
+          {
+            key: 'name',
+            label: 'Nombre',
+            type: 'string',
+            render: (value, row) => (
+              <div className="inventory-item-name">
+                <span className="inventory-name-text">{value}</span>
+                {row.description && (
+                  <span className="inventory-description-text">{row.description}</span>
+                )}
+              </div>
+            )
+          },
+          {
+            key: 'category',
+            label: 'Categoría',
+            type: 'string',
+            render: (value) => <span className="inventory-category-badge">{value}</span>
+          },
+          {
+            key: 'amount',
+            label: 'Cantidad',
+            type: 'number',
+            render: (value) => <span className="inventory-quantity-text">{value}</span>
+          },
+          {
+            key: 'available',
+            label: 'Disponible',
+            type: 'number',
+            render: (value) => <span className="inventory-available-text">{value}</span>
+          },
+          {
+            key: 'state',
+            label: 'Estado',
+            type: 'string',
+            render: (value) => (
+              <span className={`inventory-state-badge ${getStateClass(value)}`}>
+                {value}
+              </span>
+            )
+          },
+          {
+            key: 'location',
+            label: 'Ubicación',
+            type: 'string',
+            render: (value) => <span className="inventory-location-text">{value}</span>
+          }
+        ]}
+        actions={<InventoryActions />}
+        itemsPerPage={10}
+        keyField="id_inventory"
+        emptyState={
           <div className="inventory-empty-state">
             <FiPackage className="inventory-empty-icon" />
             <p>No se encontraron ítems</p>
@@ -266,75 +349,8 @@ const Inventario = () => {
               {searchTerm || categoryFilter ? 'Intenta ajustar los filtros' : 'Comienza agregando un ítem'}
             </p>
           </div>
-        ) : (
-          <table className="inventory-table">
-            <thead className="inventory-table-header">
-              <tr className="inventory-table-row">
-                <th className="inventory-table-cell inventory-header-cell">Codigo</th>
-                <th className="inventory-table-cell inventory-header-cell">Nombre</th>
-                <th className="inventory-table-cell inventory-header-cell">Categoría</th>
-                <th className="inventory-table-cell inventory-header-cell">Cantidad</th>
-                <th className="inventory-table-cell inventory-header-cell">Disponible</th>
-                <th className="inventory-table-cell inventory-header-cell">Estado</th>
-                <th className="inventory-table-cell inventory-header-cell">Ubicación</th>
-                <th className="inventory-table-cell inventory-header-cell">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="inventory-table-body">
-              {filteredItems.map((item) => (
-                <tr key={item.id_inventory} className="inventory-table-row">
-                  <td className="inventory-table-cell">
-                    <span className="inventory-code-text">{item.code}</span>
-                  </td>
-                  <td className="inventory-table-cell">
-                    <div className="inventory-item-name">
-                      <span className="inventory-name-text">{item.name}</span>
-                      {item.description && (
-                        <span className="inventory-description-text">{item.description}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="inventory-table-cell">
-                    <span className="inventory-category-badge">{item.category}</span>
-                  </td>
-                  <td className="inventory-table-cell">
-                    <span className="inventory-quantity-text">{item.amount}</span>
-                  </td>
-                  <td className="inventory-table-cell">
-                    <span className="inventory-available-text">{item.available}</span>
-                  </td>
-                  <td className="inventory-table-cell">
-                    <span className={`inventory-state-badge ${getStateClass(item.state)}`}>
-                      {item.state}
-                    </span>
-                  </td>
-                  <td className="inventory-table-cell">
-                    <span className="inventory-location-text">{item.location}</span>
-                  </td>
-                  <td className="inventory-table-cell">
-                    <div className="inventory-actions-container">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="inventory-action-button inventory-edit-button"
-                        title="Editar"
-                      >
-                        <FiEdit2 />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item)}
-                        className="inventory-action-button inventory-delete-button"
-                        title="Eliminar"
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+        }
+      />
 
       {/* Modal */}
       {isModalOpen && (
@@ -347,7 +363,7 @@ const Inventario = () => {
           setFormData={setFormData}
         />
       )}
-    </div>
+    </Section>
   );
 };
 

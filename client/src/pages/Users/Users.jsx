@@ -4,6 +4,8 @@ import { useUsers } from '../../shared/hooks/useUsers';
 import { useRoles } from '../../shared/hooks/useRoles';
 import ModalUser from './ModalUser';
 import './style.css';
+import Section from '../../shared/components/Section/Section.jsx';
+import DataTable from '../../shared/components/DataTable/DataTable.jsx';
 
 export default function Users() {
     const { users, loading, error, fetchUsers, createUser, updateUser, deleteUser, toggleUser, getUserById } = useUsers();
@@ -104,6 +106,33 @@ export default function Users() {
     const getEstadoLabel = (active) => (Number(active) ? 'Activo' : 'Inactivo');
     const getEstadoClass = (active) => (Number(active) ? 'active' : 'inactive');
 
+    // Componente de acciones para DataTable
+    const UserActions = ({ row }) => (
+        <div className="config-actions-container">
+            <button
+                onClick={() => handleEdit(row)}
+                className="config-action-button config-edit-button"
+                title="Editar"
+            >
+                <FiEdit2 />
+            </button>
+            <button
+                onClick={() => handleDelete(row)}
+                className="config-action-button config-delete-button"
+                title="Eliminar"
+            >
+                <FiTrash2 />
+            </button>
+            <button
+                onClick={() => handleToggle(row)}
+                className="config-action-button"
+                title="Activar/Desactivar"
+            >
+                {Number(row.active) ? 'Desactivar' : 'Activar'}
+            </button>
+        </div>
+    );
+
     const handleRoleToggle = (roleId) => {
         const id = Number(roleId);
         setFormData((prev) => {
@@ -119,28 +148,17 @@ export default function Users() {
     };
 
     return (
-        <div className="config-container">
-            {/* Gestión de Usuarios */}
+        <Section
+            title="Gestión de Usuarios"
+            subtitle="Administra la lista de usuarios autorizados"
+            icon={FiUsers}
+            onAdd={() => {
+                resetForm();
+                setIsModalOpen(true);
+            }}
+            addButtonText="Agregar Usuario"
+        >
             <div className="config-section">
-                <div className="section-header">
-                    <div className="section-title-container">
-                        <FiUsers className="section-icon" />
-                        <div>
-                            <h2 className="section-title">Gestión de Usuarios</h2>
-                            <p className="section-subtitle">Administra la lista de usuarios autorizados</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => {
-                            resetForm();
-                            setIsModalOpen(true);
-                        }}
-                        className="config-add-button"
-                    >
-                        <FiPlus className="config-add-icon" />
-                        Agregar user
-                    </button>
-                </div>
 
                 {/* Filtros */}
                 <div className="config-filters">
@@ -171,8 +189,57 @@ export default function Users() {
                 )}
 
                 {/* Tabla de Usuarios */}
-                <div className="config-table-container">
-                    {filteredUsers.length === 0 ? (
+                <DataTable
+                    data={filteredUsers}
+                    columns={[
+                        {
+                            key: 'name',
+                            label: 'Nombre',
+                            type: 'string',
+                            render: (value) => (
+                                <div className="config-user-name">
+                                    <span className="config-name-text">{value}</span>
+                                </div>
+                            )
+                        },
+                        {
+                            key: 'email',
+                            label: 'Email',
+                            type: 'string',
+                            render: (value) => <span className="config-email-text">{value}</span>
+                        },
+                        {
+                            key: 'tel',
+                            label: 'Teléfono',
+                            type: 'string',
+                            render: (value) => <span className="config-phone-text">{value || ''}</span>
+                        },
+                        {
+                            key: 'roles',
+                            label: 'Roles',
+                            type: 'string',
+                            sortable: false,
+                            render: (value) => (
+                                <span className="config-specialty-badge">
+                                    {Array.isArray(value) ? value.map(r => r.name).join(', ') : ''}
+                                </span>
+                            )
+                        },
+                        {
+                            key: 'active',
+                            label: 'Estado',
+                            type: 'number',
+                            render: (value) => (
+                                <span className={`config-state-badge ${getEstadoClass(value)}`}>
+                                    {getEstadoLabel(value)}
+                                </span>
+                            )
+                        }
+                    ]}
+                    actions={<UserActions />}
+                    itemsPerPage={10}
+                    keyField="id_user"
+                    emptyState={
                         <div className="config-empty-state">
                             <FiUsers className="config-empty-icon" />
                             <p>No se encontraron usuarios</p>
@@ -180,71 +247,8 @@ export default function Users() {
                                 {searchTerm ? 'Intenta ajustar los filtros' : 'Comienza agregando un usuario'}
                             </p>
                         </div>
-                    ) : (
-                        <table className="config-table">
-                            <thead className="config-table-header">
-                                <tr className="config-table-row">
-                                    <th className="config-table-cell config-header-cell">name</th>
-                                    <th className="config-table-cell config-header-cell">Email</th>
-                                    <th className="config-table-cell config-header-cell">Teléfono</th>
-                                    <th className="config-table-cell config-header-cell">Roles</th>
-                                    <th className="config-table-cell config-header-cell">Estado</th>
-                                    <th className="config-table-cell config-header-cell">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="config-table-body">
-                                {filteredUsers.map((user) => (
-                                    <tr key={user.id_user} className="config-table-row">
-                                        <td className="config-table-cell">
-                                            <div className="config-user-name">
-                                                <span className="config-name-text">{user.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="config-table-cell">
-                                            <span className="config-email-text">{user.email}</span>
-                                        </td>
-                                        <td className="config-table-cell">
-                                            <span className="config-phone-text">{user.tel || ''}</span>
-                                        </td>
-                                        <td className="config-table-cell">
-                                            <span className="config-specialty-badge">{Array.isArray(user.roles) ? user.roles.map(r => r.name).join(', ') : ''}</span>
-                                        </td>
-                                        <td className="config-table-cell">
-                                            <span className={`config-state-badge ${getEstadoClass(user.active)}`}>
-                                                {getEstadoLabel(user.active)}
-                                            </span>
-                                        </td>
-                                        <td className="config-table-cell">
-                                            <div className="config-actions-container">
-                                                <button
-                                                    onClick={() => handleEdit(user)}
-                                                    className="config-action-button config-edit-button"
-                                                    title="Editar"
-                                                >
-                                                    <FiEdit2 />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(user)}
-                                                    className="config-action-button config-delete-button"
-                                                    title="Eliminar"
-                                                >
-                                                    <FiTrash2 />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleToggle(user)}
-                                                    className="config-action-button"
-                                                    title="Activar/Desactivar"
-                                                >
-                                                    {Number(user.active) ? 'Desactivar' : 'Activar'}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
+                    }
+                />
             </div>
 
             {/* Modal para Agregar/Editar usuario */}
@@ -261,6 +265,6 @@ export default function Users() {
                     onToggleRole={handleRoleToggle}
                 />
             )}
-        </div>
+        </Section>
     );
 }

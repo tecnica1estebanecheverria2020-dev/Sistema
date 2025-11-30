@@ -380,6 +380,67 @@
   font-size: 0.9rem;
 }
 
+/* Loading State */
+.inventory-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  min-height: 400px;
+}
+
+.inventory-spinner-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #6b1426 0%, #8b1a33 100%);
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 25px rgba(107, 20, 38, 0.25);
+}
+
+.inventory-spinner {
+  font-size: 2.5rem;
+  color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.inventory-loading-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #495057;
+  margin: 0;
+  font-family: 'Urbanist', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Error State */
+.inventory-error-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #fff5f5;
+  border: 2px solid #fed7d7;
+  border-radius: 12px;
+  color: #c53030;
+}
+
+.inventory-error-state p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
 /* Modal Styles */
 .inventory-modal-overlay {
   position: fixed;

@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FiPlus, 
-  FiSearch, 
-  FiRotateCcw, 
+import {
+  FiPlus,
+  FiSearch,
+  FiRotateCcw,
   FiX,
   FiUser,
   FiBook,
   FiCamera,
   FiChevronDown,
   FiTrash,
-  FiMinus
+  FiMinus,
+  FiTruck,
+  FiRefreshCw,
+  FiRepeat
 } from 'react-icons/fi';
 import './style.css';
 import { loansService } from '../../shared/services/loansService';
 import { rolesService } from '../../shared/services/rolesService';
+import { usersService } from '../../shared/services/usersService';
 import { inventarioService } from '../../shared/services/inventarioService';
 import useNotification from '../../shared/hooks/useNotification';
 import LoanModal from './LoanModal';
+import Section from '../../shared/components/Section/Section.jsx';
+import DataTable from '../../shared/components/DataTable/DataTable.jsx';
 
 export default function Prestamos() {
   const { notify } = useNotification();
@@ -91,22 +97,84 @@ export default function Prestamos() {
     return () => window.removeEventListener('focus', onFocus);
   }, []);
 
-  // Cargar profesores (usuarios con rol Profesor) directamente por nombre de rol
+  // Cargar profesores (usuarios con rol Profesor)
   useEffect(() => {
     const loadProfessors = async () => {
       try {
         setLoadingProfessors(true);
-        const usersResp = await rolesService.getUsersByRoleName('profesor');
-        const users = usersResp?.data || [];
-        setProfessors(users.map(u => ({ value: u.id_user, label: u.name })));
+
+        // Primero obtener todos los roles para verificar el nombre exacto
+        const rolesResp = await rolesService.getRoles();
+        console.log('Todos los roles disponibles:', rolesResp);
+
+        // Buscar el rol "Profesor" (case-insensitive)
+        const professorRole = rolesResp.find(r =>
+          r.name?.toLowerCase() === 'profesor' || r.name?.toLowerCase() === 'teacher'
+        );
+
+        if (!professorRole) {
+          console.warn('No se encontró el rol Profesor');
+          setProfessors([]);
+          return;
+        }
+
+        console.log('Rol Profesor encontrado:', professorRole);
+
+        // Obtener todos los usuarios
+        const usersResp = await usersService.getUsers();
+        console.log('Respuesta de usuarios:', usersResp);
+
+        // Normalizar respuesta de usuarios
+        let allUsers = [];
+        if (Array.isArray(usersResp)) {
+          allUsers = usersResp;
+        } else if (usersResp?.data) {
+          allUsers = Array.isArray(usersResp.data) ? usersResp.data : [usersResp.data];
+        } else if (usersResp?.users) {
+          allUsers = Array.isArray(usersResp.users) ? usersResp.users : [usersResp.users];
+        }
+
+        console.log('Usuarios totales:', allUsers.length);
+
+        // Filtrar usuarios que tienen el rol de profesor
+        const professorsData = [];
+        for (const user of allUsers) {
+          try {
+            const userId = user.id_user || user.id;
+            const userRoles = await rolesService.getUserRoles(userId);
+            console.log(`Roles de usuario ${user.name}:`, userRoles);
+
+            // Verificar si tiene el rol de profesor
+            const hasProfesorRole = userRoles.some(role =>
+              Number(role.id_role) === Number(professorRole.id_role)
+            );
+
+            if (hasProfesorRole) {
+              professorsData.push({
+                value: userId,
+                label: user.name || user.username || 'Sin nombre'
+              });
+            }
+          } catch (err) {
+            console.error(`Error al obtener roles del usuario ${user.name}:`, err);
+          }
+        }
+
+        console.log('Profesores encontrados:', professorsData);
+        setProfessors(professorsData);
+
+        if (professorsData.length === 0) {
+          notify('No se encontraron usuarios con rol Profesor', 'warn');
+        }
       } catch (error) {
+        console.error('Error al cargar profesores:', error);
         notify(error?.message || 'Error al cargar profesores', 'error');
       } finally {
         setLoadingProfessors(false);
       }
     };
     loadProfessors();
-  }, []);
+  }, [notify]);
 
   // Cargar inventario y construir índice por código
   useEffect(() => {
@@ -290,27 +358,157 @@ export default function Prestamos() {
     }
   };
 
-  return (
-    <div className="prestamos-container">
-      {/* Header */}
-      <div className="prestamos-header">
-        <div className="header-content">
-          <div className="title-section">
-            <h1 className="page-title">Préstamos</h1>
-            <p className="page-subtitle">Gestión de préstamos de equipamiento</p>
-          </div>
+  // Función para restaurar un préstamo devuelto (en caso de error)
+  const handleRestoreLoan = async (loan) => {
+    if (!window.confirm(`¿Restaurar el préstamo del ítem "${loan.item}" para "${loan.solicitante}"?`)) {
+      return;
+    }
+
+    try {
+      // Encontrar el inventario por nombre del item
+      const inventoryItems = await inventarioService.getInventario();
+      const inventoryItem = inventoryItems.find(item => item.name === loan.item);
+
+      if (!inventoryItem) {
+        notify(`No se encontró el ítem "${loan.item}" en el inventario`, 'error');
+        return;
+      }
+
+      // Crear un nuevo préstamo con los mismos datos
+      await loansService.createLoan({
+        id_inventory: inventoryItem.id_inventory,
+        quantity: loan.cantidad,
+        applicant: loan.solicitante,
+        observations_loan: `Préstamo restaurado del registro anterior | Autorizado por: ${loan.profesor}`,
+      });
+
+      notify('Préstamo restaurado correctamente', 'success');
+      await fetchLoans();
+    } catch (error) {
+      notify(error?.message || 'Error al restaurar el préstamo', 'error');
+    }
+  };
+
+  // Componente de acciones para DataTable
+  const LoanActions = ({ row }) => {
+    return (
+      <div className="action-buttons">
+        {row.estado === 'Activo' ? (
           <button
+            className="action-btn return-btn"
+            title="Registrar devolución"
             onClick={() => {
-              resetForm();
-              setIsModalOpen(true);
+              setSelectedLoan(row);
+              setReturnObservations(row.observacionesDevolucion || '');
+              setIsReturnModalOpen(true);
             }}
-            className="add-button"
           >
-            <FiPlus className="add-icon" />
-            Nuevo Préstamo
+            <FiRotateCcw />
+            <span>Devolver</span>
           </button>
-        </div>
+        ) : (
+          <button
+            className="action-btn restore-btn"
+            title="Restaurar préstamo (en caso de error)"
+            onClick={() => handleRestoreLoan(row)}
+          >
+            <FiRepeat />
+            <span>Restaurar</span>
+          </button>
+        )}
       </div>
+    );
+  };
+
+  // Configuración de columnas según el modo
+  const getColumns = () => {
+    const baseColumns = [
+      {
+        key: 'item',
+        label: 'Ítem',
+        type: 'string',
+        render: (value) => <span className="item-name">{value}</span>
+      },
+      {
+        key: 'cantidad',
+        label: 'Cantidad',
+        type: 'number',
+        render: (value) => <span className="quantity">{value}</span>
+      },
+      {
+        key: 'solicitante',
+        label: 'Solicitante',
+        type: 'string',
+        render: (value) => <span className="requester">{value}</span>
+      },
+      {
+        key: 'profesor',
+        label: 'Profesor',
+        type: 'string',
+        render: (value) => <span className="professor">{value}</span>
+      }
+    ];
+
+    if (mode === 'activos') {
+      baseColumns.push({
+        key: 'fechaPrestamo',
+        label: 'Fecha Préstamo',
+        type: 'date',
+        render: (value) => <span className="date-time">{value}</span>
+      });
+    } else if (mode === 'devueltos') {
+      baseColumns.push(
+        {
+          key: 'fechaPrestamo',
+          label: 'Fecha Préstamo',
+          type: 'date',
+          render: (value) => <span className="date-time">{value}</span>
+        },
+        {
+          key: 'fechaDevolucion',
+          label: 'Fecha Devolución',
+          type: 'date',
+          render: (value) => <span className="date-time">{value || '-'}</span>
+        }
+      );
+    } else {
+      baseColumns.push({
+        key: 'fechaPrestamo',
+        label: 'Fecha',
+        type: 'date',
+        render: (value, row) => (
+          <span className="date-time">
+            {row.estado === 'Devuelto' ? (row.fechaDevolucion || '-') : (row.fechaPrestamo || '-')}
+          </span>
+        )
+      });
+    }
+
+    baseColumns.push({
+      key: 'estado',
+      label: 'Estado',
+      type: 'string',
+      render: (value) => (
+        <span className={`status-badge ${getStatusClass(value)}`}>
+          {value}
+        </span>
+      )
+    });
+
+    return baseColumns;
+  };
+
+  return (
+    <Section
+      title="Préstamos"
+      subtitle="Gestión de préstamos de equipamiento"
+      icon={FiTruck}
+      onAdd={() => {
+        resetForm();
+        setIsModalOpen(true);
+      }}
+      addButtonText="Nuevo Préstamo"
+    >
 
       {/* Stats Cards */}
       <div className="stats-grid">
@@ -381,85 +579,22 @@ export default function Prestamos() {
       </div>
 
       {/* Loans Table */}
-      <div className="loans-table-container">
-        <div className={`table-header header-${mode}`}>
-          <div className="table-cell">Ítem</div>
-          <div className="table-cell">Cantidad</div>
-          <div className="table-cell">Solicitante</div>
-          <div className="table-cell">Profesor</div>
-          {mode === 'activos' && (<div className="table-cell">Fecha Préstamo</div>)}
-          {mode === 'devueltos' && (
-            <>
-              <div className="table-cell">Fecha Préstamo</div>
-              <div className="table-cell">Fecha Devolución</div>
-            </>
-          )}
-          {mode === 'todos' && (<div className="table-cell">Fecha</div>)}
-          <div className="table-cell">Estado</div>
-          {mode === 'activos' && (<div className="table-cell">Acciones</div>)}
-        </div>
-        
-        <div className="table-body">
-          {filteredLoans.map((loan) => (
-            <div key={loan.id} className={`table-row row-${mode}`}>
-              <div className="table-cell">
-                <span className="item-name">{loan.item}</span>
-              </div>
-              <div className="table-cell">
-                <span className="quantity">{loan.cantidad}</span>
-              </div>
-              <div className="table-cell">
-                <span className="requester">{loan.solicitante}</span>
-              </div>
-              <div className="table-cell">
-                <span className="professor">{loan.profesor}</span>
-              </div>
-              {mode === 'activos' && (
-                <div className="table-cell">
-                  <span className="date-time">{loan.fechaPrestamo}</span>
-                </div>
-              )}
-              {mode === 'devueltos' && (
-                <>
-                  <div className="table-cell">
-                    <span className="date-time">{loan.fechaPrestamo}</span>
-                  </div>
-                  <div className="table-cell">
-                    <span className="date-time">{loan.fechaDevolucion || '-'}</span>
-                  </div>
-                </>
-              )}
-              {mode === 'todos' && (
-                <div className="table-cell">
-                  <span className="date-time">{loan.estado === 'Devuelto' ? (loan.fechaDevolucion || '-') : (loan.fechaPrestamo || '-')}</span>
-                </div>
-              )}
-              <div className="table-cell">
-                <span className={`status-badge ${getStatusClass(loan.estado)}`}>
-                  {loan.estado}
-                </span>
-              </div>
-              {mode === 'activos' && (
-                <div className="table-cell">
-                  <div className="action-buttons">
-                    <button
-                      className="action-btn return-btn"
-                      title="Registrar devolución"
-                      onClick={() => {
-                        setSelectedLoan(loan);
-                        setReturnObservations(loan.observacionesDevolucion || '');
-                        setIsReturnModalOpen(true);
-                      }}
-                    >
-                      <FiRotateCcw />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <DataTable
+        data={filteredLoans}
+        columns={getColumns()}
+        actions={<LoanActions />}
+        itemsPerPage={10}
+        keyField="id"
+        emptyState={
+          <div className="empty-state">
+            <FiTruck className="empty-icon" />
+            <p>No se encontraron préstamos</p>
+            <p className="empty-subtitle">
+              {searchTerm || statusFilter ? 'Intenta ajustar los filtros' : 'Comienza creando un préstamo'}
+            </p>
+          </div>
+        }
+      />
 
       {/* Modal de nuevo préstamo (LoanModal unificado) */}
       <LoanModal
@@ -477,6 +612,7 @@ export default function Prestamos() {
         scannerEnabled={scannerEnabled}
         setScannerEnabled={setScannerEnabled}
         onScanCode={onScanCode}
+        inventoryByCode={inventoryByCode}
       />
 
       {/* Modal de devolución (LoanModal unificado) */}
@@ -515,6 +651,6 @@ export default function Prestamos() {
           }
         }}
       />
-    </div>
+    </Section>
   );
 }

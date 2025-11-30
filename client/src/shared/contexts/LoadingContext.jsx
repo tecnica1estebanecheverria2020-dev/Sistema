@@ -6,8 +6,8 @@ const VALID_TYPES = ['none', 'app', 'section'];
 const LoadingContext = createContext(null);
 
 export function LoadingProvider({ children }) {
-  const [type, setType] = useState('none'); // 'none' | 'app' | 'section'
-  const [active, setActive] = useState(false);
+  const [type, setType] = useState('app'); // Default to app loading
+  const [active, setActive] = useState(true); // Default active
   const [error, setError] = useState(null);
 
   const safeSetLoading = (nextType, nextActive) => {

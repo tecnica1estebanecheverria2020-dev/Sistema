@@ -15,10 +15,12 @@ export default function useData() {
         mostRequestedItemsCount: 0,
         activeProfessorsCount: 0,
     });
+    const [mostRequestedItems, setMostRequestedItems] = useState([]);
+    const [loansByTime, setLoansByTime] = useState([]);
 
-    const fetchData = async () => {
+    const fetchData = async (background = false) => {
         try {
-            setLoading(true);
+            if (!background) setLoading(true);
 
             const data = await dataService.fetchData();
 
@@ -35,13 +37,13 @@ export default function useData() {
             setError(error);
             notify(error?.message || 'Error al obtener los datos del dashboard', 'error');
         } finally {
-            setLoading(false);
+            if (!background) setLoading(false);
         }
     };
 
-    const fetchTodayLoans = async () => {
+    const fetchTodayLoans = async (background = false) => {
         try {
-            setLoading(true);
+            if (!background) setLoading(true);
 
             const loans = await dataService.fetchTodayLoans();
             setTodayLoans(loans.map((l, idx) => ({
@@ -55,13 +57,13 @@ export default function useData() {
             setError(error);
             notify(error?.message || 'Error al obtener préstamos de hoy', 'error');
         } finally {
-            setLoading(false);
+            if (!background) setLoading(false);
         }
     };
 
-    const fetchActivitySummary = async () => {
+    const fetchActivitySummary = async (background = false) => {
         try {
-            setLoading(true);
+            if (!background) setLoading(true);
 
             const data = await dataService.fetchActivitySummary();
 
@@ -76,7 +78,35 @@ export default function useData() {
             setError(error);
             notify(error?.message || 'Error al obtener resumen de actividad', 'error');
         } finally {
-            setLoading(false);
+            if (!background) setLoading(false);
+        }
+    };
+
+    const fetchMostRequestedItems = async (background = false) => {
+        try {
+            if (!background) setLoading(true);
+            const data = await dataService.fetchMostRequestedItems();
+            setMostRequestedItems(data);
+            setError(null);
+        } catch (error) {
+            setError(error);
+            notify(error?.message || 'Error al obtener items más solicitados', 'error');
+        } finally {
+            if (!background) setLoading(false);
+        }
+    };
+
+    const fetchLoansByTime = async (background = false) => {
+        try {
+            if (!background) setLoading(true);
+            const data = await dataService.fetchLoansByTimeOfDay();
+            setLoansByTime(data);
+            setError(null);
+        } catch (error) {
+            setError(error);
+            notify(error?.message || 'Error al obtener préstamos por hora', 'error');
+        } finally {
+            if (!background) setLoading(false);
         }
     };
 
@@ -86,8 +116,12 @@ export default function useData() {
         dashboardData,
         todayLoans,
         activitySummary,
+        mostRequestedItems,
+        loansByTime,
         fetchData,
         fetchTodayLoans,
         fetchActivitySummary,
+        fetchMostRequestedItems,
+        fetchLoansByTime,
     }
 }

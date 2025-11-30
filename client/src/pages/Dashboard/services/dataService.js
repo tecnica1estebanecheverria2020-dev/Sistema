@@ -27,5 +27,23 @@ export const dataService = {
         } catch (error) {
             throw error;
         }
+    },
+    fetchMostRequestedItems: async () => {
+        try {
+            const resp = await axios.get('/dashboard/most-requested-items');
+            const data = resp?.data?.data || [];
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },
+    fetchLoansByTimeOfDay: async () => {
+        try {
+            const resp = await axios.get('/dashboard/loans-by-time');
+            const data = resp?.data?.data || [];
+            return data;
+        } catch (error) {
+            throw error;
+        }
     }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { FiFilter, FiX, FiPlus, FiEdit, FiTrash2, FiChevronDown, FiClock, FiUser, FiBook, FiMapPin } from "react-icons/fi";
+import { FiFilter, FiX, FiPlus, FiEdit, FiTrash2, FiChevronDown, FiClock, FiUser, FiBook, FiMapPin, FiCalendar } from "react-icons/fi";
 import AddScheduleModal from "./AddScheduleModal";
 import EditScheduleModal from "./EditScheduleModal";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
@@ -7,6 +7,8 @@ import "./style.css";
 import { schedulesService } from "../../shared/services/schedulesServices";
 import { catalogsService } from "../../shared/services/catalogsService";
 import useNotification from "../../shared/hooks/useNotification";
+import Section from "../../shared/components/Section/Section.jsx";
+import DataTable from "../../shared/components/DataTable/DataTable.jsx";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
@@ -204,21 +206,34 @@ export default function Horarios() {
 
   const hasActiveFilters = selectedCurso !== "all" || selectedHorario !== "all";
 
+  // Componente de acciones para DataTable
+  const ScheduleActions = ({ row }) => (
+    <div className="schedule-actions">
+      <button
+        className="action-btn edit-btn"
+        onClick={() => { setScheduleToEdit(row); setShowEditModal(true); }}
+        title="Editar horario"
+      >
+        <FiEdit />
+      </button>
+      <button
+        className="action-btn delete-btn"
+        onClick={() => { setScheduleToDelete(row); setShowDeleteModal(true); }}
+        title="Eliminar horario"
+      >
+        <FiTrash2 />
+      </button>
+    </div>
+  );
+
   return (
-    <div className="horarios-container">
-      {/* Header */}
-      <div className="horarios-header">
-        <div className="header-content">
-          <div>
-            <h1 className="page-title">Horarios</h1>
-            <p className="page-subtitle">Calendario de talleres y aulas</p>
-          </div>
-          <button className="add-button" onClick={() => setShowAddModal(true)}>
-            <FiPlus className="button-icon" />
-            Agregar Horario
-          </button>
-        </div>
-      </div>
+    <Section
+      title="Horarios"
+      subtitle="Calendario de talleres y aulas"
+      icon={FiCalendar}
+      onAdd={() => setShowAddModal(true)}
+      addButtonText="Agregar Horario"
+    >
 
       {/* Filters */}
       <div className="filters-card">
@@ -372,59 +387,77 @@ export default function Horarios() {
         <div className="list-header">
           <h2 className="list-title">Lista de Horarios</h2>
         </div>
-        <div className="schedule-list">
-          {loading ? (
-            <div className="no-schedules"><p>Cargando horarios...</p></div>
-          ) : filteredSchedules.length === 0 ? (
-            <div className="no-schedules">
-              <p>{error || 'No hay horarios que coincidan con los filtros'}</p>
-              {hasActiveFilters && (
-                <button className="clear-filters-btn" onClick={clearFilters}>
-                  Limpiar filtros
-                </button>
-              )}
-            </div>
-          ) : (
-            filteredSchedules.map((schedule) => (
-              <div key={schedule.id} className="schedule-list-item">
-                <div className="schedule-info">
-                <div className="schedule-main">
-                  <div className="schedule-badges">
-                    <span className="time-range"><FiClock /> {schedule.horaInicio}</span>
-                    <span className="aula-badge">{schedule.aula}</span>
-                    <span className="materia-name">{schedule.materia}</span>
-                    <span className="profesor-badge">{schedule.profesor}</span>
-                    <span className="grupo-badge">{schedule.grupoTaller}</span>
-                  </div>
-                    <div className="schedule-details">
-                      <span>{schedule.diaSemana}</span>
-                      <span className="separator">•</span>
-                      <span className="time-range">{schedule.horaInicio} - {schedule.horaFin}</span>
-                      <span className="separator">•</span>
-                      <span className="turno-badge">{schedule.turno}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="schedule-actions">
-                  <button 
-                    className="action-btn edit-btn"
-                    onClick={() => { setScheduleToEdit(schedule); setShowEditModal(true); }}
-                    title="Editar horario"
-                  >
-                    <FiEdit />
+        {loading ? (
+          <div className="no-schedules"><p>Cargando horarios...</p></div>
+        ) : (
+          <DataTable
+            data={filteredSchedules}
+            columns={[
+              {
+                key: 'diaSemana',
+                label: 'Día',
+                type: 'string',
+                render: (value) => <span>{value}</span>
+              },
+              {
+                key: 'horaInicio',
+                label: 'Hora Inicio',
+                type: 'string',
+                render: (value) => <span className="time-range"><FiClock /> {value}</span>
+              },
+              {
+                key: 'horaFin',
+                label: 'Hora Fin',
+                type: 'string',
+                render: (value) => <span className="time-range">{value}</span>
+              },
+              {
+                key: 'aula',
+                label: 'Aula',
+                type: 'string',
+                render: (value) => <span className="aula-badge">{value}</span>
+              },
+              {
+                key: 'materia',
+                label: 'Materia',
+                type: 'string',
+                render: (value) => <span className="materia-name">{value}</span>
+              },
+              {
+                key: 'profesor',
+                label: 'Profesor',
+                type: 'string',
+                render: (value) => <span className="profesor-badge">{value}</span>
+              },
+              {
+                key: 'grupoTaller',
+                label: 'Grupo/Taller',
+                type: 'string',
+                render: (value) => <span className="grupo-badge">{value}</span>
+              },
+              {
+                key: 'turno',
+                label: 'Turno',
+                type: 'string',
+                render: (value) => <span className="turno-badge">{value}</span>
+              }
+            ]}
+            actions={<ScheduleActions />}
+            itemsPerPage={10}
+            keyField="id"
+            emptyState={
+              <div className="no-schedules">
+                <FiCalendar className="empty-icon" />
+                <p>{error || 'No hay horarios que coincidan con los filtros'}</p>
+                {hasActiveFilters && (
+                  <button className="clear-filters-btn" onClick={clearFilters}>
+                    Limpiar filtros
                   </button>
-                  <button 
-                    className="action-btn delete-btn"
-                    onClick={() => { setScheduleToDelete(schedule); setShowDeleteModal(true); }}
-                    title="Eliminar horario"
-                  >
-                    <FiTrash2 />
-                  </button>
-                </div>
+                )}
               </div>
-            ))
-          )}
-        </div>
+            }
+          />
+        )}
       </div>
 
       <AddScheduleModal 
@@ -451,6 +484,6 @@ export default function Horarios() {
           setScheduleToDelete(null);
         }}
       />
-    </div>
+    </Section>
   );
 }

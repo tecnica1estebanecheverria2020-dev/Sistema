@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 // Rutas
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
@@ -45,6 +46,15 @@ export default function App() {
 }
 
 const AppRoutes = () => {
+  const { stopAppLoading } = useGlobalLoading();
+
+  useEffect(() => {
+    // Minimum loading time of 3 seconds
+    const timer = setTimeout(() => {
+      stopAppLoading();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Componente guard que valida permisos por ruta
   const RequirePermission = ({ permission, children }) => {

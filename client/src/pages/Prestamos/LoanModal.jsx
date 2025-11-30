@@ -9,9 +9,13 @@ import {
   FiMinus,
   FiRotateCcw,
   FiPlus as FiPlusIcon,
+  FiSave,
+  FiGrid,
+  FiSearch,
 } from 'react-icons/fi';
 import { LuBinary } from "react-icons/lu";
 import CustomSelect from './CustomSelect';
+import Modal from '../../shared/components/Modal/Modal';
 
 export default function LoanModal(props) {
   const { type, isOpen } = props;
@@ -30,30 +34,50 @@ export default function LoanModal(props) {
       onSubmit,
       scannerEnabled = true,
       setScannerEnabled = () => {},
-      onScanCode = () => {}
+      onScanCode = () => {},
+      inventoryByCode = {}
     } = props;
 
     const [manualCode, setManualCode] = useState('');
+    const [activeTab, setActiveTab] = useState('scanner'); // 'scanner' | 'catalog'
+    const [catalogSearch, setCatalogSearch] = useState('');
+
+    // Convertir inventoryByCode a array para el catálogo
+    const inventoryItems = Object.values(inventoryByCode);
+
+    // Filtrar items del catálogo por búsqueda
+    const filteredCatalog = inventoryItems.filter(item =>
+      item.name?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+      item.code?.toLowerCase().includes(catalogSearch.toLowerCase())
+    );
+
+    const handleAddFromCatalog = (item) => {
+      if (!item) return;
+      onScanCode(item.code);
+    };
+
+    const footer = (
+      <>
+        <button type="button" onClick={onClose} className="modal-btn modal-btn-secondary">
+          <FiX />
+          Cancelar
+        </button>
+        <button type="submit" form="loan-form" className="modal-btn modal-btn-primary">
+          <FiSave />
+          Registrar Préstamo
+        </button>
+      </>
+    );
 
     return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <div className="modal-header-content">
-              <div className="modal-icon">
-                <FiPlus />
-              </div>
-              <div className="modal-title-section">
-                <h2 className="modal-title">Registrar Préstamo</h2>
-                <p className="modal-subtitle">Escanea los ítems con código QR y completa los datos del préstamo</p>
-              </div>
-            </div>
-            <button onClick={onClose} className="modal-close">
-              <FiX />
-            </button>
-          </div>
-
-          <form onSubmit={onSubmit} className="modal-form">
+      <Modal
+        isOpen={true}
+        onClose={onClose}
+        title="Registrar Préstamo"
+        icon={FiPlus}
+        footer={footer}
+      >
+        <form id="loan-form" onSubmit={onSubmit} className="modal-form">
             <div className="form-sections">
               {/* Left Section - Form */}
               <div className="form-section">
@@ -101,14 +125,36 @@ export default function LoanModal(props) {
                 </div>
               </div>
 
-              {/* Right Section - QR Scanner */}
+              {/* Right Section - QR Scanner / Catalog */}
               <div className="qr-section">
                 <h3 className="section-title">
-                  <FiCamera className="section-icon" />
+                  <FiBook className="section-icon" />
                   Ítems Solicitados
                 </h3>
 
-                <div className="qr-scanner">
+                {/* Tabs */}
+                <div className="loan-tabs">
+                  <button
+                    type="button"
+                    className={`loan-tab ${activeTab === 'scanner' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('scanner')}
+                  >
+                    <FiCamera />
+                    Escanear QR
+                  </button>
+                  <button
+                    type="button"
+                    className={`loan-tab ${activeTab === 'catalog' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('catalog')}
+                  >
+                    <FiGrid />
+                    Catálogo ({inventoryItems.length})
+                  </button>
+                </div>
+
+                {/* Scanner Tab */}
+                {activeTab === 'scanner' && (
+                  <div className="qr-scanner">
                   <div className="qr-icon">
                     <div className="qr-squares">
                       <div className="qr-square"></div>
@@ -171,7 +217,56 @@ export default function LoanModal(props) {
                     </>
                   )}
                 </div>
+                )}
 
+                {/* Catalog Tab */}
+                {activeTab === 'catalog' && (
+                  <div className="catalog-view">
+                    <div className="catalog-search">
+                      <FiSearch className="search-icon-catalog" />
+                      <input
+                        type="text"
+                        value={catalogSearch}
+                        onChange={(e) => setCatalogSearch(e.target.value)}
+                        placeholder="Buscar por nombre o código..."
+                        className="catalog-search-input"
+                      />
+                    </div>
+                    <div className="catalog-list">
+                      {filteredCatalog.length === 0 ? (
+                        <div className="no-catalog-items">
+                          <FiBook className="no-items-icon" />
+                          <p className="no-items-text">
+                            {catalogSearch ? 'No se encontraron ítems' : 'No hay ítems en el catálogo'}
+                          </p>
+                        </div>
+                      ) : (
+                        filteredCatalog.map((item, index) => (
+                          <div key={index} className="catalog-item">
+                            <div className="catalog-item-info">
+                              <span className="catalog-item-name">{item.name}</span>
+                              <span className="catalog-item-code">Código: {item.code}</span>
+                              <span className="catalog-item-available">
+                                Disponible: {item.available || 0}/{item.amount || 0}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="catalog-add-btn"
+                              onClick={() => handleAddFromCatalog(item)}
+                              disabled={!item.available || item.available <= 0}
+                            >
+                              <FiPlusIcon />
+                              Agregar
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Lista de items solicitados (común para ambos tabs) */}
                 <div className="requested-items">
                   {requestedItems.length === 0 ? (
                     <div className="no-items">
@@ -217,38 +312,36 @@ export default function LoanModal(props) {
                 </div>
               </div>
             </div>
-
-            <div className="modal-actions">
-              <button type="button" onClick={onClose} className="cancel-button">Cancelar</button>
-              <button type="submit" className="submit-button">Registrar Préstamo</button>
-            </div>
           </form>
-        </div>
-      </div>
+      </Modal>
     );
   }
 
   // Return modal
   const { loan, returnObservations, setReturnObservations, onClose, onConfirmReturn } = props;
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-header-content">
-            <div className="modal-icon">
-              <FiRotateCcw />
-            </div>
-            <div className="modal-title-section">
-              <h2 className="modal-title">Registrar devolución</h2>
-              <p className="modal-subtitle">Confirma la devolución del préstamo</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="modal-close">
-            <FiX />
-          </button>
-        </div>
 
-        <div className="form-section">
+  const returnFooter = (
+    <>
+      <button type="button" onClick={onClose} className="modal-btn modal-btn-secondary">
+        <FiX />
+        Cancelar
+      </button>
+      <button type="button" className="modal-btn modal-btn-primary" onClick={onConfirmReturn}>
+        <FiRotateCcw />
+        Confirmar devolución
+      </button>
+    </>
+  );
+
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Registrar Devolución"
+      icon={FiRotateCcw}
+      footer={returnFooter}
+    >
+      <div className="form-section">
           <p><strong>Confirma la devolución de:</strong> {loan?.item}</p>
           <p><strong>Solicitante:</strong> {loan?.solicitante}</p>
           <p><strong>Cantidad:</strong> {loan?.cantidad}</p>
@@ -263,14 +356,6 @@ export default function LoanModal(props) {
             />
           </div>
         </div>
-
-        <div className="modal-actions">
-          <button type="button" onClick={onClose} className="cancel-button">Cancelar</button>
-          <button type="button" className="submit-button" onClick={onConfirmReturn}>
-            Confirmar devolución
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

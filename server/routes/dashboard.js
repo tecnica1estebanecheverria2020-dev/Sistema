@@ -11,5 +11,7 @@ const dashboardController = new DashboardController(dashboardService);
 router.get('/data', dashboardController.getData);
 router.get('/today-loans', dashboardController.getTodayLoans);
 router.get('/activity-summary', dashboardController.getActivitySummary);
+router.get('/most-requested-items', dashboardController.getMostRequestedItems);
+router.get('/loans-by-time', dashboardController.getLoansByTime);
 
 export default router;

@@ -26,7 +26,9 @@ export const useComunicados = () => {
     return (rows || []).map((r) => {
       const tipoT = String(r.tipo || '').toLowerCase();
       const p = r.payload || {};
-      const headerImg = r.bg_image_url || (tipoT === 'informativo' ? (Array.isArray(p.imagenes) ? (p.imagenes[0]?.src || '') : '') : tipoT === 'social' ? (Array.isArray(p.galeria) ? (p.galeria[0]?.src || '') : '') : '');
+      // Prioritize header_image from payload, then bg_image_url, then fallback
+      const headerImg = p.header_image || r.bg_image_url || (tipoT === 'informativo' ? (Array.isArray(p.imagenes) ? (p.imagenes[0]?.src || '') : '') : tipoT === 'social' ? (Array.isArray(p.galeria) ? (p.galeria[0]?.src || '') : '') : '');
+      
       const galeria = tipoT === 'informativo' ? (Array.isArray(p.imagenes) ? p.imagenes.map((it) => it.src).filter(Boolean) : []) : tipoT === 'social' ? (Array.isArray(p.galeria) ? p.galeria.map((it) => it.src).filter(Boolean) : []) : [];
       let contenido = '';
       if (tipoT === 'informativo') contenido = r.contenido_html || '';
@@ -41,16 +43,30 @@ export const useComunicados = () => {
         const etiquetas = Array.isArray(p.etiquetas) ? p.etiquetas : [];
         contenido = `<p>${mensaje}</p>${etiquetas.length ? `<div>${etiquetas.map((t) => `#${t}`).join(' ')}</div>` : ''}`;
       }
-      const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+      
+      // Use fecha from payload if available, otherwise created_at
+      let fecha = '';
+      if (p.fecha) {
+        fecha = new Date(p.fecha + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+      } else if (r.created_at) {
+        fecha = new Date(r.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+
       return {
         id: r.id_comunicado,
         titulo: r.titulo,
         autor: r.author_name || 'Usuario',
         contenido,
         fecha,
-        tipo: 'Publicado',
+        tipo: 'Publicado', // Assuming default or mapped from r.tipo? The original code hardcoded 'Publicado' in return, but r.tipo exists. Original code: tipo: 'Publicado'
         imagenHeader: headerImg,
-        galeria
+        galeria,
+        imagenes: p.imagenes || [],
+        bgColor: r.bg_color,
+        bgImage: r.bg_image_url,
+        bgOpacity: r.bg_opacity,
+        links: p.links || [],
+        examenes: p.examenes || []
       };
     });
   }, []);
@@ -166,6 +182,18 @@ export const useComunicados = () => {
     return tmp.textContent || tmp.innerText || '';
   }, []);
 
+  const deleteComunicado = useCallback(async (id) => {
+    try {
+      await comunicadosService.deleteComunicado(id);
+      setComunicados((prev) => prev.filter((c) => c.id !== id));
+      setFilteredComunicados((prev) => prev.filter((c) => c.id !== id));
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }, []);
+
   return {
     comunicados,
     filteredComunicados,
@@ -194,5 +222,6 @@ export const useComunicados = () => {
     removeImageFromGallery,
     stripHtml,
     fetchComunicados,
+    deleteComunicado,
   };
 };

@@ -1,4 +1,5 @@
-import { FiX, FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight, FiImage } from 'react-icons/fi';
+import { FiX, FiBold, FiItalic, FiUnderline, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight, FiImage, FiMessageSquare, FiSave } from 'react-icons/fi';
+import Modal from '../../../shared/components/Modal/Modal';
 
 export default function CreateModal({
   isOpen,
@@ -13,17 +14,34 @@ export default function CreateModal({
   handleContentChange,
 }) {
   if (!isOpen) return null;
+
+  const handleSubmitForm = (e) => {
+    e.preventDefault();
+    onSubmit(e);
+  };
+
+  const footer = (
+    <>
+      <button type="button" onClick={onClose} className="modal-btn modal-btn-secondary">
+        <FiX />
+        Cancelar
+      </button>
+      <button type="submit" form="comunicado-form" className="modal-btn modal-btn-primary">
+        <FiSave />
+        Crear Comunicado
+      </button>
+    </>
+  );
+
   return (
-    <div className="comunicados-modal-overlay" onClick={onClose}>
-      <div className="comunicados-create-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="comunicados-create-header">
-          <h3 className="comunicados-create-title">Nuevo Comunicado</h3>
-          <p className="comunicados-create-subtitle">Crea un anuncio con formato enriquecido e imágenes</p>
-          <button onClick={onClose} className="comunicados-close-button">
-            <FiX />
-          </button>
-        </div>
-        <form onSubmit={onSubmit} className="comunicados-create-form">
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Nuevo Comunicado"
+      icon={FiMessageSquare}
+      footer={footer}
+    >
+      <form id="comunicado-form" onSubmit={handleSubmitForm} className="comunicados-create-form">
           <div className="comunicados-form-row">
             <div className="comunicados-form-group">
               <label className="comunicados-form-label">Título</label>
@@ -137,12 +155,7 @@ export default function CreateModal({
               )}
             </div>
           </div>
-          <div className="comunicados-form-actions">
-            <button type="button" onClick={onClose} className="comunicados-cancel-button">Cancelar</button>
-            <button type="submit" className="comunicados-submit-button">Crear Comunicado</button>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

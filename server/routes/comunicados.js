@@ -12,5 +12,6 @@ const comunicadosController = new ComunicadosController(comunicadosService)
 router.get('/', requireAuth, comunicadosController.getAll)
 router.get('/:id', requireAuth, comunicadosController.getById)
 router.post('/', requireAuth, comunicadosController.create)
+router.delete('/:id', requireAuth, comunicadosController.delete)
 
 export default router

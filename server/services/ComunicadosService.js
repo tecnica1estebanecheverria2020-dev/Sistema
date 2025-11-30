@@ -60,6 +60,14 @@ class ComunicadosService {
       payload: (() => { try { return JSON.parse(r.payload || '{}') } catch { return {} } })()
     }
   }
+
+  async delete(id) {
+    const [res] = await this.conex.query(
+      'DELETE FROM comunicados WHERE id_comunicado = ?',
+      [id]
+    )
+    return res.affectedRows > 0
+  }
 }
 
 export default ComunicadosService

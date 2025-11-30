@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
-import { FiEdit } from 'react-icons/fi';
+import { FiEdit, FiX, FiSave } from 'react-icons/fi';
 import { catalogsService } from '../../shared/services/catalogsService';
 import { schedulesService } from '../../shared/services/schedulesServices';
+import Modal from '../../shared/components/Modal/Modal';
 
 const ES_TO_EN = {
   Lunes: 'Monday',
@@ -157,15 +158,29 @@ export default function EditScheduleModal({ isOpen, schedule, onClose, onSaved }
 
   if (!isOpen) return null;
 
+  const footer = (
+    <>
+      <button type="button" onClick={onClose} className="modal-btn modal-btn-secondary">
+        <FiX />
+        Cancelar
+      </button>
+      <button type="submit" form="edit-schedule-form" className="modal-btn modal-btn-primary" disabled={loading}>
+        <FiSave />
+        {loading ? 'Guardando...' : 'Guardar cambios'}
+      </button>
+    </>
+  );
+
   return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <div className="modal-header">
-          <FiEdit className="modal-icon" />
-          <h3>Editar Horario</h3>
-        </div>
-        <form onSubmit={handleSubmit} className="modal-body">
-          {error && <div className="modal-error">{error}</div>}
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Editar Horario"
+      icon={FiEdit}
+      footer={footer}
+    >
+      <form id="edit-schedule-form" onSubmit={handleSubmit} className="modal-body">
+        {error && <div className="modal-error">{error}</div>}
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">Aula</label>
@@ -236,13 +251,7 @@ export default function EditScheduleModal({ isOpen, schedule, onClose, onSaved }
               </select>
             </div>
           </div>
-
-          <div className="modal-actions">
-            <button type="button" className="btn cancel" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn primary" disabled={loading}>{loading ? 'Guardando...' : 'Guardar cambios'}</button>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

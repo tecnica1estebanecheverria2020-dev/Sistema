@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import { FiX, FiClock } from "react-icons/fi";
+import { FiX, FiClock, FiSave, FiPlus } from "react-icons/fi";
 import { schedulesService } from "../../shared/services/schedulesServices";
 import { catalogsService } from "../../shared/services/catalogsService";
 import useNotification from "../../shared/hooks/useNotification";
+import Modal from "../../shared/components/Modal/Modal";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 const TURNOS = ["Mañana", "Tarde"];
@@ -150,18 +151,28 @@ export default function AddScheduleModal({ isOpen, onClose, onSave }) {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="modal-overlay">
-      <div className="modal-container">
-        <div className="modal-header">
-          <h2 className="modal-title">Agregar Horario</h2>
-          <p className="modal-subtitle">Completa los datos del nuevo horario</p>
-          <button className="modal-close-btn" onClick={handleClose}>
-            <FiX />
-          </button>
-        </div>
+  const footer = (
+    <>
+      <button type="button" onClick={handleClose} className="modal-btn modal-btn-secondary">
+        <FiX />
+        Cancelar
+      </button>
+      <button type="submit" form="add-schedule-form" className="modal-btn modal-btn-primary">
+        <FiSave />
+        Agregar Horario
+      </button>
+    </>
+  );
 
-        <form onSubmit={handleSubmit} className="modal-form">
+  return (
+    <Modal
+      isOpen={true}
+      onClose={handleClose}
+      title="Agregar Horario"
+      icon={FiPlus}
+      footer={footer}
+    >
+      <form id="add-schedule-form" onSubmit={handleSubmit} className="modal-form">
           <div className="form-grid">
             {/* Aula */}
             <div className="form-group">
@@ -297,17 +308,7 @@ export default function AddScheduleModal({ isOpen, onClose, onSave }) {
               />
             </div>
           </div>
-
-          <div className="modal-actions">
-            <button type="button" onClick={handleClose} className="cancel-btn">
-              Cancelar
-            </button>
-            <button type="submit" className="submit-btn">
-              Agregar Horario
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

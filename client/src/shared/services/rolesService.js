@@ -48,4 +48,14 @@ export const rolesService = {
       throw new Error(err?.response?.data?.message || 'No se pudieron remover roles del usuario');
     }
   },
+
+  /** Obtener usuarios por nombre de rol */
+  getUsersByRoleName: async (roleName) => {
+    try {
+      const { data } = await axios.get(`/roles/name/${roleName}/users`);
+      return data;
+    } catch (err) {
+      throw new Error(err?.response?.data?.message || `No se pudieron obtener usuarios con rol ${roleName}`);
+    }
+  },
 };
