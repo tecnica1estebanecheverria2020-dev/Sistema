@@ -14,34 +14,53 @@ class AuthService {
         return await bcrypt.compare(password, hashedPassword);
     };
 
-    registerUser = async (userData) => {
-        try {
-            const { name, email, password } = userData;
-            const normalizedEmail = email.toLowerCase().trim();
+    createUser = async (userData) => {
+        const { name, email, password, roles = [] } = userData;
+        const hashedPassword = await this.hashPassword(password);
+        const normalizedEmail = email.toLowerCase().trim();
 
-            const hashedPassword = await this.hashPassword(password);
+        const [login] = await this.conex.query(
+            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+            [name, normalizedEmail, hashedPassword]
+        );
 
-            const [result] = await this.conex.query(
-                'INSERT INTO login (name, email, pass) VALUES (?, ?, ?)',
-                [name, normalizedEmail, hashedPassword]
-            );
+        // Insertar relaciones de roles si se proporcionan como objetos { id_role, name }
+        if (Array.isArray(roles) && roles.length > 0) {
+            const roleIds = Array.from(new Set(
+                roles.map(r => Number(r?.id_role)).filter(Boolean)
+            ));
 
-            return {
-                id_login: result.insertId,
-                name: name,
-                email: normalizedEmail,
-                active: true,
-                is_admin: false,
+            if (roleIds.length > 0) {
+                // Validar que los roles existan
+                const [validRoles] = await this.conex.query(
+                    `SELECT id_role, name FROM roles WHERE id_role IN (${roleIds.map(() => '?').join(',')})`,
+                    roleIds
+                );
+                const validSet = new Set(validRoles.map(r => r.id_role));
+                const invalid = roleIds.filter(id => !validSet.has(id));
+                if (invalid.length > 0) {
+                    throw { status: 400, message: `Roles inválidos: ${invalid.join(',')}` };
+                }
+
+                for (const rid of roleIds) {
+                    await this.conex.query('INSERT INTO users_roles (id_user, id_role) VALUES (?, ?)', [login.insertId, rid]);
+                }
             }
-
-        } catch (error) {
-            if (error.status) throw error;
-            if (error.code === 'ER_DUP_ENTRY') {
-                throw { status: 409, message: 'El correo electrónico ya está registrado' };
-            }
-            throw { status: 500, message: 'Error interno del servidor', cause: error };
         }
-    };
+
+        // Obtener roles del usuario en formato de objetos
+        const [userRoles] = await this.conex.query(
+            'SELECT r.id_role, r.name FROM users_roles ur JOIN roles r ON ur.id_role = r.id_role WHERE ur.id_user = ?',
+            [login.insertId]
+        );
+
+        return {
+            id_user: login.insertId,
+            name,
+            email: normalizedEmail,
+            roles: userRoles.map(r => ({ id_role: r.id_role, name: r.name }))
+        };
+    }
 
     loginUser = async (credentials) => {
         try {
@@ -49,7 +68,7 @@ class AuthService {
             const normalizedEmail = email.toLowerCase().trim();
 
             const [login] = await this.conex.query(
-                'SELECT * FROM login WHERE email = ? AND active = 1',
+                'SELECT * FROM users  WHERE email = ? AND active = 1',
                 [normalizedEmail]
             );
 
@@ -64,7 +83,7 @@ class AuthService {
                 throw { status: 423, message: 'Cuenta bloqueada temporalmente. Intenta más tarde.' };
             }
 
-            const isPasswordValid = await this.comparePassword(password, user.pass);
+            const isPasswordValid = await this.comparePassword(password, user.password);
 
             if (!isPasswordValid) {
                 // Incrementar intentos fallidos
@@ -76,8 +95,8 @@ class AuthService {
                 }
 
                 await this.conex.query(
-                    'UPDATE login SET failed_attempts = ?, lock_until = ? WHERE id_login = ?',
-                    [newFailedAttempts, lockedUntil, user.id_login]
+                    'UPDATE users SET failed_attempts = ?, lock_until = ? WHERE id_user = ?',
+                    [newFailedAttempts, lockedUntil, user.id_user]
                 );
 
                 throw { status: 401, message: 'Credenciales incorrectas' };
@@ -85,16 +104,22 @@ class AuthService {
 
             // Resetear intentos fallidos en login exitoso
             await this.conex.query(
-                'UPDATE login SET failed_attempts = 0, lock_until = NULL WHERE id_login = ?',
-                [user.id_login]
+                'UPDATE users SET failed_attempts = 0, lock_until = NULL WHERE id_user = ?',
+                [user.id_user]
+            );
+
+            // Obtener todos los roles asociados al usuario
+            const [userRoles] = await this.conex.query(
+                'SELECT r.id_role, r.name FROM users_roles ur ' +
+                'JOIN roles r ON ur.id_role = r.id_role WHERE ur.id_user = ?',
+                [user.id_user]
             );
 
             return {
-                id_login: user.id_login,
-                name: user.name,
+                id_user: user.id_user,
+                roles: userRoles.map(r => ({ id_role: r.id_role, name: r.name })),
                 email: user.email,
-                active: user.active,
-                is_admin: user.is_admin,
+                name: user.name,
             }
         } catch (error) {
             if (error.status) throw error;

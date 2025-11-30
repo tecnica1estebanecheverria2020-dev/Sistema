@@ -6,39 +6,25 @@ class AuthController {
         this.service = authService;
     }
 
-    register = async (req, res) => {
-        const { name, email, password } = req.body;
+    // No creo que sea necesario un registro, la creacion de usuarios lo controlaria el admin
+    createUser = async (req, res) => {
+        const { name, email, password, roles } = req.body;
         try {
             if (!name || !email || !password) {
-                throw { status: 400, message: 'Faltan datos para el registro' };
+                throw { status: 400, message: 'Faltan datos para crear el usuario' };
             }
 
-            const user = await this.service.registerUser({ name, email, password });
-
-            const token = generateToken({
-                id_login: user.id_login,
-                name: user.name,
-                email: user.email,
-                active: user.active,
-                is_admin: user.is_admin,
-            });
-
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: true, // usar HTTPS en producción
-                sameSite: 'Strict',
-                maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week8
-            });
+            const user = await this.service.createUser({ name, email, password, roles: Array.isArray(roles) ? roles : [] });
 
             res.status(201).json({
                 success: true,
-                message: 'Se registró correctamente',
-                user: { ...user, pass: '[Hidden]' }
+                message: 'Usuario creado correctamente',
+                user
             });
         } catch (err) {
             return handleError(res, err);
         }
-    };
+    }
 
     login = async (req, res) => {
         const { email, password } = req.body;
@@ -47,14 +33,13 @@ class AuthController {
                 throw { status: 400, message: 'Faltan datos para el login' };
             }
 
-            const result = await this.service.loginUser({ email, password });
+            const user = await this.service.loginUser({ email, password });
 
             const token = generateToken({
-                id_login: result.id_login,
-                name: result.name,
-                email: result.email,
-                active: result.active,
-                is_admin: result.is_admin,
+                id_user: user.id_user,
+                roles: Array.isArray(user.roles) ? user.roles : [],
+                email: user.email,
+                name: user.name,
             });
 
             res.cookie('token', token, {
@@ -67,7 +52,7 @@ class AuthController {
             res.status(200).json({
                 success: true,
                 message: 'Se inició sesión correctamente',
-                user: result 
+                user: user 
             });
         } catch (err) {
             return handleError(res, err);
@@ -76,6 +61,7 @@ class AuthController {
 
     logout = (req, res) => {
         res.clearCookie('token');
+        req.user = null;
         res.status(200).json({
             success: true,
             message: 'Se cerró sesión correctamente',
@@ -88,6 +74,35 @@ class AuthController {
             message: 'Usuario autenticado',
             user: req.user
         });
+    };
+
+    demo = (req, res) => {
+        try {
+            // Crear un usuario demo con permisos básicos
+            const demoUser = {
+                id_user: 999,
+                roles: [{ id_role: 5, name: 'Profesor' }],
+                email: 'demo@sistema.com',
+                name: 'Usuario Demo'
+            };
+
+            const token = generateToken(demoUser);
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: false, // false para desarrollo local
+                sameSite: 'Strict',
+                maxAge: 1000 * 60 * 60 * 24, // 1 día para demo
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Sesión demo iniciada correctamente',
+                user: demoUser
+            });
+        } catch (err) {
+            return handleError(res, err);
+        }
     };
 }
 

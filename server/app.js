@@ -5,12 +5,21 @@ import logger from './middlewares/logger.js';
 import loadEnv from './utils/loadEnv.js';
 import cookieParser from 'cookie-parser';
 import loadStaticFiles from './utils/loadStaticsFiles.js'
+import log from './utils/log.js';
 // Validacion de autenticacion y admin
 // import { requireAuth, requireAdmin } from './middlewares/authMiddleware.js';
 
 // Importaciones de rutas
 import authRoutes from './routes/auth.js';
-import log from './utils/log.js';
+import inventarioRoutes from './routes/inventario.js';
+import loansRoutes from './routes/loans.js';
+import rolesRoutes from './routes/roles.js';
+import schedulesRoutes from './routes/schedules.js';
+import dashboardRoutes from './routes/dashboard.js';
+import catalogsRoutes from './routes/catalogs.js';
+import usersRoutes from './routes/users.js';
+import comunicadosRoutes from './routes/comunicados.js';
+
 // Middlewares
 const app = express();
 
@@ -38,14 +47,35 @@ if (!isProduction) {
 
 // Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/inventario', inventarioRoutes);
+app.use('/api/loans', loansRoutes);
+app.use('/api/roles', rolesRoutes);
+app.use('/api/schedules', schedulesRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/catalogs', catalogsRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/comunicados', comunicadosRoutes);
 
 // Testeo de api
 app.get('/api/test', async (req, res) => {
-    res.send('Todo ok!')
+    res.status(200).json({
+      success: true,
+      message: 'Servidor operativo',
+      connection: true,
+      timestamp: new Date().toISOString()
+    });
 });
 
 // Servir archivos estaticos de la build de Vite
 if (isProduction) loadStaticFiles(app);
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint no encontrado',
+    message: `La ruta ${req.originalUrl} no existe`
+  });
+});
 
 // Prender servidor de solicitudes http 
 const port = process.env.PORT || 5001;
